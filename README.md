@@ -1,7 +1,14 @@
 # Pipeline for processing dark matter halo and galaxy mocks in Euclid
 
 ## Starting point:
+
+Build and install python package:
+```
+python2 setup.py install
+```
+
 Query 8614 of the Flagship mock, obtained as follows:
+```
 SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_gal`, `true_redshift_gal`, `observed_redshift_gal`, `vrad_gal`, `logf_halpha_model3_ext`, `logf_halpha_model1_ext`, `euclid_vis`, `euclid_nisp_h`, `euclid_nisp_j`, `euclid_nisp_y`, `halo_lm`, `kind`, `halo_id`, `galaxy_id`
         FROM flagship_mock_1_8_4_s 
         WHERE `true_redshift_halo`>=0.8 
@@ -10,6 +17,7 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
         AND `z_gal` >= 0
         AND `y_gal` >= 0
         AND `x_gal` >= 0
+```
 
 ## Directory Tree:
 * [root]/Pipeline                        # code
