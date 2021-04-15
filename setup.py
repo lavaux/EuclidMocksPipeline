@@ -8,7 +8,7 @@ with open("README.md", mode="r") as fh:
 setuptools.setup(
     name="euclid-observation-systematics",
     version="0.0.1",
-    author="Pierluigi Monacoi <pierluigi.monaco@inaf.it>, Guilhem Lavaux <guilhem.lavaux@iap.fr>",
+    author="Pierluigi Monacoi <pierluigi.monaco@inaf.it>, Tiago Castro, Guilhem Lavaux <guilhem.lavaux@iap.fr>",
     author_email="pierluigi.monaco@inaf.it",
     description="A small example package",
     long_description=long_description,
