@@ -142,8 +142,8 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
 * createSelection.py [input file] [random]: creates a selection for a
   galaxy or a random catalog; the second option is chose if "random"
   or "1" is provided when calling the script. The parameters of the
-  selection are specified in the sel_input_[input.selection_tag].py,
-  where selection_tag is given in the input file.
+  selection are specified in the `sel_input_[input.selection_tag].py`,
+  where `selection_tag` is given in the input file.
 
 
 ## Measurements of galaxy catalogs:
@@ -166,7 +166,7 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
   sq deg per redshift interval per magnitude as a function of flux) in
   redshift intervals.
 
-* maps_and_cls.py [input file]: it builds the density contrast maps
+* `maps_and_cls.py` [input file]: it builds the density contrast maps
   data and random galaxy catalogs, read from LE3 files, and measures
   their angular clustering with anafast.
 
