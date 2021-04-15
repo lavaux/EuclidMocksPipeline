@@ -4,21 +4,19 @@
 ################################################################################
 from astropy.io import fits
 import numpy as np
-import sdhod
-import NFW
-import utils
+from euclid_obssys import sdhod, NFW, utils
 from colossus.halo import concentration
 from scipy.stats import poisson
 import sys
 
 if len(sys.argv)<2:
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 try: 
     input = __import__(sys.argv[1],  globals(), locals(), [], 0)
 except ModuleNotFoundError:
     print("input file not found")
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 
 print("# Running createSDHOD_Catalog.py with {}".format(sys.argv[1]))
