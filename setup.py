@@ -24,7 +24,7 @@ setuptools.setup(
     package_dir={"euclid_obssys": "src/euclid_obssys"},
     scripts=[
         "scripts/euclidGenerateInput.py",
-        "scripts/createSDHOD_Catalog.py
+        "scripts/createSDHOD_Catalog.py"
     ],
     package_data={"euclid_obssys":["templates/input.py"]},
     packages=setuptools.find_packages(where="src"),
