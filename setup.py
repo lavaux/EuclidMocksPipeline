@@ -21,7 +21,12 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "src"},
+    package_dir={"euclid_obssys": "src/euclid_obssys"},
+    scripts=[
+        "scripts/euclidGenerateInput.py",
+        "scripts/createSDHOD_Catalog.py"
+    ],
+    package_data={"euclid_obssys":["templates/input.py"]},
     packages=setuptools.find_packages(where="src"),
     python_requires="<3",
 )
