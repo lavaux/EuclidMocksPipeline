@@ -3,6 +3,7 @@ import pkg_resources
 import argparse as ap
 import re
 import os
+import sys
 
 def run():
     input_template = pkg_resources.resource_string(__name__,
@@ -33,6 +34,10 @@ def run():
     }
 
     print("Output directory is {}".format(args.outdir))
+
+    if args.o is None:
+      print("Output file is required.")
+      sys.exit(1)
 
     for k, v in replacements.items():
         input_template = re.sub(k, v, input_template)
