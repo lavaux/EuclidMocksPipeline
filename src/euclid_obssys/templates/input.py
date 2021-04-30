@@ -15,7 +15,7 @@ from astropy.io import fits
 from os import path
 
 # directory where products are stored, absolute path
-outdir = '/euclid_data/pmonaco/EuclidMocks/Products/'
+outdir = "OUTDIR"
 
 # master catalog queried from Cosmohub
 query = '8614'
