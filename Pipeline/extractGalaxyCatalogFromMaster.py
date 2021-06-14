@@ -6,7 +6,8 @@ import numpy as np
 from astropy.io import fits
 import sys
 from os import path
-from euclid_obssys import readConfig
+from euclid_obssys.config import readConfig
+import zarr
 
 
 if len(sys.argv)<2:
@@ -22,38 +23,38 @@ except Exception as e:
 
 print("# Running extractGalaxyCatalogFromMaster.py with {}".format(sys.argv[1]))
 
-footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
+footprint_res, footprint_zrange, sky_fraction, footprint = input['read_footprint']()
 del footprint
 
-print("# loading catalog {}...".format(input.master_fname()))
+print("# loading catalog {}...".format(input['master_fname']()))
 
 # input raw catalog
-cat = fits.getdata(input.master_fname())
+cat = zarr.open_group(input['master_fname'](), mode="r")['catalog']
 
 print("# selecting galaxies...")
 
-selection = cat[input.flux_key] > input.logflux_limit
+selection = cat[input['flux_key']] > input['logflux_limit']
 
 Nextract = selection.sum()
 
 print("# extracting {} galaxies".format(Nextract))
 
 extract = np.empty(Nextract, 
-                   dtype=[('x_gal', np.float), ('y_gal', np.float), ('z_gal', np.float),
-                          ('ra_gal', np.float), ('dec_gal', np.float), ('kind', np.int), 
-                          ('true_redshift_gal', np.float), ('observed_redshift_gal', np.float), 
-                          ('halo_lm', np.float), ('galaxy_id', np.int), ('halo_id', np.int), 
-                          (input.flux_key, np.float), ('sh_'+input.flux_key, np.float)])
+                   dtype=[('x_gal', float), ('y_gal', float), ('z_gal', float),
+                          ('ra_gal', float), ('dec_gal', float), ('kind', int), 
+                          ('true_redshift_gal', float), ('observed_redshift_gal', float), 
+                          ('halo_lm', float), ('galaxy_id', int), ('halo_id', int), 
+                          (input['flux_key'], float), ('sh_'+input['flux_key'], float)])
 
 for field in extract.dtype.names:
     print("    processing {}".format(field))
 
-    if field=='sh_'+input.flux_key:
+    if field=='sh_'+input['flux_key']:
         print("# shuffling galaxies...")
         
-        shuffled=np.copy(cat[input.flux_key][selection])
+        shuffled=np.copy(cat[input['flux_key']][selection])
 
-        zbins = np.linspace(footprint_zrange[0],footprint_zrange[1],round( (footprint_zrange[1]-footprint_zrange[0] )/input.deltazbin + 1 ) )
+        zbins = np.linspace(footprint_zrange[0],footprint_zrange[1],round( (footprint_zrange[1]-footprint_zrange[0] )/input['deltazbin'] + 1 ) )
         zindex = np.digitize( extract['true_redshift_gal'], zbins )
         for iz in np.arange(zbins.size-1):
             ff = zindex==iz
@@ -67,9 +68,11 @@ for field in extract.dtype.names:
 
 del cat
 
-fname=input.flagcat_fname()
+fname=input['flagcat_fname']()
 
 print("# writing file {}".format(fname))
-fits.writeto(fname, extract, overwrite=True)
+out = zarr.open_group(fname, mode="w")
+out['catalog'] = extract
+#fits.writeto(fname, extract, overwrite=True)
 
 print("# done!")

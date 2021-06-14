@@ -166,7 +166,7 @@ def build_fname(thisdir,tags,ext='.fits'):
     basepath = path.join(outdir, thisdir)
     first = True
 
-    fname = "catalogs"
+    fname = "catalogs_"
     for tag in tags:
         if not tag is None:
             if not first:
