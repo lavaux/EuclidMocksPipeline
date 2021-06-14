@@ -10,7 +10,7 @@ import astropy.units as u
 from scipy.integrate import quad
 import importlib
 import healpy as hp
-import pozzettiLF
+import euclid_obssys.pozzettiLF as pozzettiLF
 from astropy.io import fits
 from os import path
 
@@ -98,9 +98,9 @@ ngrid = 1024
 def read_footprint():
 
     if footprint_tag is None:
-        footprint_fname = outdir + 'Footprints/FullOctant.fits'
+        footprint_fname = path.join(outdir,'Footprints','FullOctant.fits')
     else:
-        footprint_fname = outdir + 'Footprints/{}.fits'.format(footprint_tag)        
+        footprint_fname = path.join(outdir,'Footprints','{}.fits'.format(footprint_tag))
 
     print("# Loading footprint from {}...".format(footprint_fname))
 
@@ -163,9 +163,10 @@ def build_fname(thisdir,tags,ext='.fits'):
     if thisdir[-1] is not '/':
         thisdir += '/'
 
-    fname = outdir + thisdir
+    basepath = path.join(outdir, thisdir)
     first = True
 
+    fname = ""
     for tag in tags:
         if tag is not None:
             if not first:
@@ -174,7 +175,7 @@ def build_fname(thisdir,tags,ext='.fits'):
             first = False
             fname += tag
     fname += ext
-    return fname
+    return path.join(basepath, fname)
 
 
 def exclude_dir(fname):
