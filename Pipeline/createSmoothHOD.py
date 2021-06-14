@@ -9,14 +9,19 @@ from scipy.ndimage import gaussian_filter
 import sys
 import healpy as hp
 
+from euclid_obssys.config import readConfig
+import zarr
+
+
 if len(sys.argv)<2:
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
-try: 
-    input = __import__(sys.argv[1],  globals(), locals(), [], 0)
-except ModuleNotFoundError:
+try:
+    input = readConfig(sys.argv[1])
+except Exception as e:
+    print(e)
     print("input file not found")
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 
 print("# Running createSmoothHOD.py with {}".format(sys.argv[1]))
@@ -26,13 +31,14 @@ print("# The footprint covers {}% of the sky".format(100*sky_fraction))
 
 # Import the Raw Catalog
 print("# Reading indices from file {}...".format(input.indices_fname()))
-rawcat_indices = fits.getdata(input.indices_fname())['indices']
+rawcat_indices = zarr.open_group(input.indices_fname())['indices']
 
 print("# Reading Catalog {}...".format(input.master_fname()))
-rawcat = fits.getdata(input.master_fname())
+root = zarr.open_group(input.master_fname())
+rawcat = root['catalog']
 
 print("# Extracting colums from the catalog...")
-good = rawcat_indices > 0
+good = np.array(rawcat_indices) > 0
 zs   = rawcat['true_redshift_gal'][rawcat_indices][good]
 
 del rawcat_indices

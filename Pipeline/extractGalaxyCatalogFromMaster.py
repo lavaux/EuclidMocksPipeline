@@ -11,14 +11,14 @@ import zarr
 
 
 if len(sys.argv)<2:
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 try:
     input = readConfig(sys.argv[1])
 except Exception as e:
     print(e)
     print("input file not found")
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 
 print("# Running extractGalaxyCatalogFromMaster.py with {}".format(sys.argv[1]))

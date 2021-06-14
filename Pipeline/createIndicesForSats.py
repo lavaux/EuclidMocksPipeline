@@ -5,11 +5,29 @@
 from astropy.io import fits
 from astropy.table import Table
 import numpy as np
+from euclid_obssys.config import readConfig
+import sys
+import zarr
+
+
+if len(sys.argv)<2:
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
+    sys.exit(0)
+try:
+    input = readConfig(sys.argv[1])
+except Exception as e:
+    print(e)
+    print("input file not found")
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
+    sys.exit(0)
 
 print("# Running createIndicesForSats.py")
 
+source = zarr.open_group(input.master_fname(), mode="r")
+cat = source['catalog']
+
 #cat=fits.getdata('../Products/RawCatalogs/8614_100sqdeg.fits')
-cat=fits.getdata('../Products/catalog.fits')
+#cat=fits.getdata('../Products/catalog.fits')
 
 print("read ../Products/RawCatalogs/8614_100sqdeg.fits")
 
@@ -69,9 +87,12 @@ while i<Ngal:
 print("loop done")
 
 
-t=Table([halo_index], names=('indices',))
-fname='../Products/RawCatalogs/8614_100sqdeg_indices.fits'
-t.write(fname,format='fits',overwrite=True)
+#t=Table([halo_index], names=('indices',))
+#fname='../Products/RawCatalogs/8614_100sqdeg_indices.fits'
+#t.write(fname,format='fits',overwrite=True)
 
-print("written file "+fname)
+out_index = zarr.open_group(input.indices_fname())
+out_index['indices'] = halo_index
+
+print("written file "+input.indices_fname())
 

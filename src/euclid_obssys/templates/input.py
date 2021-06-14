@@ -227,7 +227,7 @@ def master_fname():
     return build_fname('RawCatalogs',[query,footprint_tag], ext='.zarr')
 
 def indices_fname():
-    return build_fname('RawCatalogs',[query,footprint_tag,'indices'])
+    return build_fname('RawCatalogs',[query,footprint_tag,'indices'], ext='.zarr')
 
 def boxcat_fname():
     return build_fname('GalaxyCatalogs',['box',      otherlab,lf_model_tag(),cm_tag()])
