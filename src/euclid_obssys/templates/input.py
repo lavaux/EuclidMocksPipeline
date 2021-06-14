@@ -166,7 +166,7 @@ def build_fname(thisdir,tags,ext='.fits'):
     basepath = path.join(outdir, thisdir)
     first = True
 
-    fname = ""
+    fname = "catalogs"
     for tag in tags:
         if not tag is None:
             if not first:
@@ -224,7 +224,7 @@ def Lbox_tag():
 # file names
 
 def master_fname():
-    return build_fname('RawCatalogs',[query,footprint_tag])
+    return build_fname('RawCatalogs',[query,footprint_tag], ext='.zarr')
 
 def indices_fname():
     return build_fname('RawCatalogs',[query,footprint_tag,'indices'])
