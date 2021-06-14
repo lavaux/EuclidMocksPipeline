@@ -7,7 +7,7 @@ import sys
 
 def run():
     input_template = pkg_resources.resource_string(__name__,
-                                                   "templates/input.py")
+                                                   "templates/input.py").decode('utf-8')
 
     parser = ap.ArgumentParser(
         description="generate config file for Euclid mock")

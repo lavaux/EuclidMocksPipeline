@@ -160,7 +160,7 @@ def Pozzetti_dndz (z1, z2, minflux=None, maxflux=None):
 
 def build_fname(thisdir,tags,ext='.fits'):
 
-    if thisdir[-1] is not '/':
+    if thisdir[-1] != '/':
         thisdir += '/'
 
     basepath = path.join(outdir, thisdir)
@@ -168,9 +168,9 @@ def build_fname(thisdir,tags,ext='.fits'):
 
     fname = ""
     for tag in tags:
-        if tag is not None:
+        if not tag is None:
             if not first:
-                if tag[0] is not '_':
+                if tag[0] != '_':
                     tag = '_' + tag
             first = False
             fname += tag
@@ -246,13 +246,13 @@ def SDHOD_fname():
 
 def galcat_fname(tag=cat_type):
 
-    if tag is 'box':
+    if tag == 'box':
         return boxcat_fname()
-    elif tag is 'flagship':
+    elif tag == 'flagship':
         return flagcat_fname()
-    elif tag is 'sdhod':
+    elif tag == 'sdhod':
         return hodcat_fname()
-    elif tag is 'pinocchio':
+    elif tag == 'pinocchio':
         return pincat_fname()
     else:
         print("ERROR in input.galcat_fname: unrecognised cat_type")
@@ -262,12 +262,12 @@ def galcat_kernel(tag=cat_type):
     return exclude_dir(galcat_fname(tag))[:-5]
 
 def selection_data_fname(sel_tag=selection_data_tag):
-    if sel_tag is not None:
+    if not sel_tag is None:
         return build_fname('Selections',['data',sel_tag,galcat_kernel()])
     else:
         return ''
 def selection_random_fname(sel_tag=selection_random_tag):
-    if sel_tag is not None:
+    if not sel_tag is None:
         return build_fname('Selections',['random',sel_tag,galcat_kernel()])
     else:
         return ''

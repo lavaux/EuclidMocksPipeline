@@ -3,24 +3,17 @@
 ###                                                                          ###
 ################################################################################
 import numpy as np
+import zarr
 from astropy.io import fits
 import healpy as hp
 import sys
 from os import path
-
-
-def readConfig(fname):
-   with open(fname, mode="rt") as f:
-     code='\n'.join(f.read().splitlines())
-   global_dict = {'__builtins__':__builtins__}
-   exec(code, global_dict)
-   return global_dict
+from euclid_obssys import readConfig
 
 if len(sys.argv)<2:
     print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 try: 
-#    input = __import__(sys.argv[1],  globals(), locals(), [], 0)
     input = readConfig(sys.argv[1])
 except Exception as e:
     print(e)
@@ -63,17 +56,24 @@ foot_sel[redshift_sel] = fp_small
 
 Nextract = foot_sel.sum()
 
-extract = np.empty(Nextract, dtype=cat.dtype)
+print(f"# Nextract={Nextract}")
+
+store = zarr.open_group(input['master_fname'](), mode="w")
+extract = store.empty(shape=(Nextract,), dtype=cat.dtype, chunks=(10000000,), name="catalog")
+
+#extract = np.empty(Nextract, dtype=cat.dtype)
 
 for field in cat.dtype.names:
-    print("processing {}".format(field))
-    extract[field]=cat[field][foot_sel]
+   print(f"# Doing field {field}")
+   extract[field] = cat[field][foot_sel]
+#foot_sel] = zarr.copy(cat[foot_sel], extract, log=sys.stdout)
+#=cat[field][foot_sel]
 
 del cat
 
-print('# writing catalog to file {}/RawCatalogs/{}_{}.fits'.format(input['outdir'],input['query'],input['footprint_tag']))
+#print('# writing catalog to file {}/RawCatalogs/{}_{}.fits'.format(input['outdir'],input['query'],input['footprint_tag']))
 
-fits.writeto('{}/RawCatalogs/{}_{}.fits'.format(input['outdir'],input['query'],input['footprint_tag']), extract, overwrite=True)
+#fits.writeto('{}/RawCatalogs/{}_{}.fits'.format(input['outdir'],input['query'],input['footprint_tag']), extract, overwrite=True)
 
 print("# done!")
 
