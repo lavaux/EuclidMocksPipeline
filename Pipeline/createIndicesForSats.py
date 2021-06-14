@@ -8,7 +8,8 @@ import numpy as np
 
 print("# Running createIndicesForSats.py")
 
-cat=fits.getdata('../Products/RawCatalogs/8614_100sqdeg.fits')
+#cat=fits.getdata('../Products/RawCatalogs/8614_100sqdeg.fits')
+cat=fits.getdata('../Products/catalog.fits')
 
 print("read ../Products/RawCatalogs/8614_100sqdeg.fits")
 

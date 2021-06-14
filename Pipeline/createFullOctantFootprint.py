@@ -4,6 +4,8 @@
 ###                                                                          ###
 ################################################################################
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from astropy.io import fits
 import healpy as hp
@@ -21,7 +23,8 @@ footprint_tag = None
 footprint_zrange = [0.8, 2.0]
 
 # reddening map for checking where the footprint has been placed
-reddening = hp.ud_grade(hp.read_map(outdir+'ExtinctionMaps/HFI_CompMap_ThermalDustModel_2048_R1.20.fits', field=2), footprint_res)
+#reddening = hp.ud_grade(hp.read_map(outdir+'ExtinctionMaps/HFI_CompMap_ThermalDustModel_2048_R1.20.fits', field=2), footprint_res)
+reddening = hp.ud_grade(hp.read_map(outdir+'ExtinctionMaps/COM_CompMap_ThermalDust-commander_2048_R2.00.fits', field=2), footprint_res)
 
 # creating boolean healpy map
 (theta,phi)=hp.pix2ang(footprint_res,np.arange(hp.nside2npix(footprint_res)))
@@ -32,7 +35,10 @@ footprint[(theta<np.pi/2.) & (phi<np.pi/2.)]=True
 sky_fraction = footprint.sum()/footprint.size
 
 # plot of the location
-hp.mollview(footprint.astype(int)+reddening,max=0.2)
+foot2 = reddening.copy()
+foot2[footprint] *= 2
+#hp.mollview(footprint.astype(int)+reddening,max=100)
+hp.mollview(foot2,max=1000)
 plt.savefig(outdir+'Plots/FullOctant.png')
 
 # writes footprint on fits file

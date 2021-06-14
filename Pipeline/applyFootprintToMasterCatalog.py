@@ -9,14 +9,23 @@ import sys
 from os import path
 
 
+def readConfig(fname):
+   with open(fname, mode="rt") as f:
+     code='\n'.join(f.read().splitlines())
+   global_dict = {'__builtins__':__builtins__}
+   exec(code, global_dict)
+   return global_dict
+
 if len(sys.argv)<2:
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 try: 
-    input = __import__(sys.argv[1],  globals(), locals(), [], 0)
-except ModuleNotFoundError:
+#    input = __import__(sys.argv[1],  globals(), locals(), [], 0)
+    input = readConfig(sys.argv[1])
+except Exception as e:
+    print(e)
     print("input file not found")
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
+    print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 
 print("# Running applyFootprintToMasterCatalog.py with {}".format(sys.argv[1]))
