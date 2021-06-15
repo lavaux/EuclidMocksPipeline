@@ -13,6 +13,9 @@ from ..config import readConfig
 def applyFootprintToMaster(config: str):
     """Apply an indicated footprint in the configuration to a large master catalog.
 
+    It applies a footprint to the master catalog, extracting another (smaller) master
+    catalog.
+
     Args:
         config (str): Pipeline config file
     """
