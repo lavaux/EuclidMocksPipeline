@@ -2,6 +2,7 @@
 ### Author: Tiago Castro, Pierluigi Monaco, Guilhem Lavaux                   ###
 ###                                                                          ###
 ################################################################################
+from . import register_tool
 import numpy as np
 import zarr
 from astropy.io import fits
@@ -10,6 +11,7 @@ import sys
 from ..config import readConfig
 
 
+@register_tool
 def applyFootprintToMaster(config: str):
     """Apply an indicated footprint in the configuration to a large master catalog.
 

@@ -1,3 +1,6 @@
+from . import register_tool
+
+@register_tool
 def generateConfig(
     o: str,
     lf_model: int = 1,

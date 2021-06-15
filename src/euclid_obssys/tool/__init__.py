@@ -1,20 +1,9 @@
-from .input_generator import generateConfig
-from .footprint import applyFootprintToMaster
-from .extract import extractGalaxyCatalogFromMaster
 
-class EuclidTool(object):
-    """Euclid Observational systematics toolbox
+_toolbox = []
 
-    This is the euclid toolbox for generating mock catalogs from master catalogs, general
-    galaxy high level models, and Euclid footprints.
+def register_tool(function):
+    _toolbox.append(function)
+    return function
 
-    Commands should be executed in that order:
-        * config
-        * 
-
-    """
-
-    def __init__(self):
-        self.config = generateConfig
-        self.applyFootprintToMaster = applyFootprintToMaster
-        self.extractGalaxyCatalogFromMaster = extractGalaxyCatalogFromMaster
+def get_tools():
+    return _toolbox
