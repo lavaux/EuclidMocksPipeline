@@ -2,7 +2,8 @@
 ### Authors: Tiago Castro, Pierluigi Monaco                                  ###
 ###                                                                          ###
 ################################################################################
-from .config import register_tool
+from . import register_tool
+from ..config import readConfig
 import numpy as np
 import healpy as hp
 import sys

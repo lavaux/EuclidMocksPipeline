@@ -1,9 +1,5 @@
 from . import get_tools
-from .input_generator import generateConfig
-from .footprint import applyFootprintToMaster
-from .extract import extractGalaxyCatalogFromMaster
-from .hod import createSmoothHOD, createSDHOD_Catalog
-
+from . import input_generator , footprint, extract, hod, random
 
 class EuclidTool(object):
     """Euclid Observational systematics toolbox
@@ -12,8 +8,12 @@ class EuclidTool(object):
     galaxy high level models, and Euclid footprints.
 
     Commands should be executed in that order:
-        * config
-        *
+        * generateConfig
+        * applyFootprintToMaster
+        * extractGalaxyCatalogFromMaster
+        * createSmoothHOD
+        * createSDHOD_Catalog
+        * createRandom
 
     """
 
