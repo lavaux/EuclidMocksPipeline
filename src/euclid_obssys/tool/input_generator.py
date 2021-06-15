@@ -1,5 +1,6 @@
 from . import register_tool
 
+
 @register_tool
 def generateConfig(
     o: str,

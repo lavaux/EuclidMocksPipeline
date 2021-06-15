@@ -8,6 +8,7 @@ from astropy.io import fits
 from euclid_obssys.config import readConfig
 import zarr
 
+
 @register_tool
 def extractGalaxyCatalogFromMaster(config: str):
     """Extract a galaxy catalog from a master catalog based on pipeline config.

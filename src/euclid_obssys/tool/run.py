@@ -4,6 +4,7 @@ from .footprint import applyFootprintToMaster
 from .extract import extractGalaxyCatalogFromMaster
 from .hod import createSmoothHOD, createSDHOD_Catalog
 
+
 class EuclidTool(object):
     """Euclid Observational systematics toolbox
 
@@ -19,6 +20,7 @@ class EuclidTool(object):
     def __init__(self):
         for tool in get_tools():
             setattr(self, tool.__name__, tool)
+
 
 def run_tool():
     import fire

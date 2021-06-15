@@ -184,6 +184,7 @@ def createSmoothHOD(config: str) -> None:
 
 ###############################################################################
 
+
 @register_tool
 def createSDHOD_Catalog(config: str) -> None:
     """Creates a galaxy catalog by
@@ -215,8 +216,8 @@ def createSDHOD_Catalog(config: str) -> None:
 
     print("# Reading the halo catalog from {}...".format(input.master_fname()))
     store = zarr.open_group(input.master_fname(), mode="w")
-    rawcat = store['catalog']
-    
+    rawcat = store["catalog"]
+
     c_kind = rawcat["kind"]
     c_z = rawcat["true_redshift_gal"]
     c_logm = rawcat["halo_lm"]
