@@ -3,3 +3,4 @@ colossus
 scipy
 healpy 
 astropy
+fire

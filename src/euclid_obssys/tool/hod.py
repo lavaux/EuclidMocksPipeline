@@ -214,8 +214,9 @@ def createSDHOD_Catalog(config: str) -> None:
     hodtable = fits.getdata(input.SDHOD_fname())
 
     print("# Reading the halo catalog from {}...".format(input.master_fname()))
-    rawcat = fits.getdata(input.master_fname())
-
+    store = zarr.open_group(input.master_fname(), mode="w")
+    rawcat = store['catalog']
+    
     c_kind = rawcat["kind"]
     c_z = rawcat["true_redshift_gal"]
     c_logm = rawcat["halo_lm"]
@@ -245,7 +246,7 @@ def createSDHOD_Catalog(config: str) -> None:
 
     Nhalos = c_z.size
 
-    print("# Found {} main halos".format(Nhalos))
+    print(f"# Found {Nhalos} main halos")
 
     print("# Random sampling the Centrals...")
     NCen = sdhod.Ncen(hodtable, c_logm, c_z)
@@ -253,7 +254,7 @@ def createSDHOD_Catalog(config: str) -> None:
     hostCentral = np.random.rand(Nhalos) <= NCen
     totCentrals = hostCentral.sum()
 
-    print("# There will be {} central galaxies".format(totCentrals))
+    print(f"# There will be {totCentrals} central galaxies")
 
     print("# Random sampling the Satellites...")
     # Getting the number of Satellites according to a poisson distribution
@@ -261,7 +262,7 @@ def createSDHOD_Catalog(config: str) -> None:
     hostSat = Nsat > 0
     totSat = Nsat.sum()
 
-    print("# There will be {} satellite galaxies".format(totSat))
+    print(f"# There will be {totSat} satellite galaxies")
 
     # Total number of Galaxies Sat+Cen
     Ngal = int(totSat + totCentrals)
@@ -423,19 +424,19 @@ def createSDHOD_Catalog(config: str) -> None:
     catalog = np.empty(
         Ngal,
         dtype=[
-            ("x_gal", np.float),
-            ("y_gal", np.float),
-            ("z_gal", np.float),
-            ("ra_gal", np.float),
-            ("dec_gal", np.float),
-            ("kind", np.int),
-            ("true_redshift_gal", np.float),
-            ("observed_redshift_gal", np.float),
-            ("halo_lm", np.float),
-            ("id", np.int),
-            ("halo_id", np.int),
-            (input.flux_key, np.float),
-            ("sh_" + input.flux_key, np.float),
+            ("x_gal", float),
+            ("y_gal", float),
+            ("z_gal", float),
+            ("ra_gal", float),
+            ("dec_gal", float),
+            ("kind", int),
+            ("true_redshift_gal", float),
+            ("observed_redshift_gal", float),
+            ("halo_lm", float),
+            ("id", int),
+            ("halo_id", int),
+            (input.flux_key, float),
+            ("sh_" + input.flux_key, float),
         ],
     )
 
