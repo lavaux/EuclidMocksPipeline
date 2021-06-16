@@ -1,6 +1,6 @@
 import numpy as np
 from astropy.constants import G
-from NFW import normalizedNFWMass
+from .NFW import normalizedNFWMass
 
 c = 299792.0 # Km/s
 G = G.to("Mpc Msun^-1 km^2 s^-2").value # G Newton in Mpc/Msun x (km/s)^2

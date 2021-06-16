@@ -25,7 +25,7 @@ def createSmoothHOD(config: str) -> None:
     from .. import sdhod, NFW, utils
     from colossus.cosmology import cosmology
 
-    input = readConfig(sys.config)
+    input = readConfig(config)
 
     print(f"# Running createSmoothHOD.py with {config}")
 
@@ -200,7 +200,7 @@ def createSDHOD_Catalog(config: str) -> None:
 
     input = readConfig(config)
 
-    print("# Running createSDHOD_Catalog.py with {}".format(sys.argv[1]))
+    print("# Running createSDHOD_Catalog.py with {}".format(config))
 
     footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
     del footprint

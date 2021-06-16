@@ -57,7 +57,7 @@ def applyFootprintToMaster(config: str):
 
     Nextract = foot_sel.sum()
 
-    print(f"# Nextract={Nextract}")
+    print(f"# Nextract={Nextract} to {input.master_fname()}")
 
     store = zarr.open_group(input.master_fname(), mode="w")
     extract = store.empty(

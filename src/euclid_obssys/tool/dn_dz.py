@@ -31,7 +31,7 @@ def dN_dZ(config:str)->None:
 
     if not path.exists(fname):
         print("ERROR: galaxy catalog {} does not exist".format(fname))
-        sys.exit(-1)
+        return -1
 
     cat = fits.getdata(fname)
 
@@ -45,7 +45,7 @@ def dN_dZ(config:str)->None:
 
     if np.abs((ztab[1]-ztab[0])/input.deltazbin-1) > 1e-5:
         print("!The chosen redshift binning and redshift range are not compatible!")
-        sys.exit(-1)
+        return -1
 
     # comoving distances for bins
     bin_edges = np.asarray([ input.LCDMmodel.comoving_distance(z).to(input.l_unit).value for z in ztab ])

@@ -89,7 +89,7 @@ def extractGalaxyCatalogFromMaster(config: str):
 
     fname = input.flagcat_fname()
 
-    print("# writing file {fname}")
+    print(f"# writing file {fname}")
     out = zarr.open_group(fname, mode="w")
     out["catalog"] = extract
     # fits.writeto(fname, extract, overwrite=True)
