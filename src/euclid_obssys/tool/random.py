@@ -4,11 +4,7 @@
 ################################################################################
 from . import register_tool
 from ..config import readConfig
-import numpy as np
-import healpy as hp
 import sys
-from astropy.io import fits
-
 
 @register_tool
 def createRandom(config: str) -> None:
@@ -21,6 +17,10 @@ def createRandom(config: str) -> None:
     Args:
         config (str): Pipeline config file
     """
+    from astropy.io import fits
+    import healpy as hp
+    import numpy as np
+
     input = readConfig(config)
 
     print(f"# Running createRandom.py with {config}")

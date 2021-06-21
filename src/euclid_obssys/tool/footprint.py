@@ -3,10 +3,6 @@
 ###                                                                          ###
 ################################################################################
 from . import register_tool
-import numpy as np
-import zarr
-from astropy.io import fits
-import healpy as hp
 import sys
 from ..config import readConfig
 
@@ -21,6 +17,11 @@ def applyFootprintToMaster(config: str):
     Args:
         config (str): Pipeline config file
     """
+    import zarr
+    import numpy as np
+    from astropy.io import fits
+    import healpy as hp
+
     input = readConfig(config)
 
     print(f"# Running applyFootprintToMasterCatalog.py with {config}")

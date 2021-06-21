@@ -5,12 +5,6 @@
 from . import register_tool
 from ..config import readConfig
 
-from astropy.io import fits
-import numpy as np
-from scipy.ndimage import gaussian_filter
-from scipy.stats import poisson
-import healpy as hp
-import zarr
 
 
 @register_tool
@@ -23,7 +17,13 @@ def createSmoothHOD(config: str) -> None:
         config (str): Pipeline configuration file.
     """
     from .. import sdhod, NFW, utils
+    import numpy as np
+    from astropy.io import fits
     from colossus.cosmology import cosmology
+    from scipy.ndimage import gaussian_filter
+    from scipy.stats import poisson
+    import healpy as hp
+    import zarr
 
     input = readConfig(config)
 
@@ -197,6 +197,11 @@ def createSDHOD_Catalog(config: str) -> None:
     """
     from .. import sdhod, NFW, utils
     from colossus.halo import concentration
+    from colossus.cosmology import cosmology
+    from astropy.io import fits
+    from scipy.ndimage import gaussian_filter
+    from scipy.stats import poisson
+    import healpy as hp
 
     input = readConfig(config)
 

@@ -4,10 +4,6 @@
 ################################################################################
 from . import register_tool
 from ..config import readConfig
-import numpy as np
-from astropy.io import fits
-import healpy as hp
-from scipy.ndimage import gaussian_filter1d
 
 @register_tool
 def dN_dZ(config:str)->None:
@@ -20,7 +16,11 @@ def dN_dZ(config:str)->None:
     Args:
         config (str): Pipeline config file
     """
+    import numpy as np
     from os import path
+    from astropy.io import fits
+    import healpy as hp
+    from scipy.ndimage import gaussian_filter1d
 
     print(f"# Running dndz.py with {config}")
 

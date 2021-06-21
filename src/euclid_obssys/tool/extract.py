@@ -3,11 +3,7 @@
 ###                                                                          ###
 ################################################################################
 from . import register_tool
-import numpy as np
-from astropy.io import fits
 from euclid_obssys.config import readConfig
-import zarr
-
 
 @register_tool
 def extractGalaxyCatalogFromMaster(config: str):
@@ -20,6 +16,10 @@ def extractGalaxyCatalogFromMaster(config: str):
     Args:
         config (str): The pipeline configuration file
     """
+    from astropy.io import fits
+    import numpy as np
+    import zarr
+
     input = readConfig(config)
 
     print(f"# Running extractGalaxyCatalogFromMaster.py with {config}")
