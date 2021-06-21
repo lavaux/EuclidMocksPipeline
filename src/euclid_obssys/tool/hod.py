@@ -34,10 +34,10 @@ def createSmoothHOD(config: str) -> None:
 
     # Import the Raw Catalog
     print("# Reading indices from file {}...".format(input.indices_fname()))
-    rawcat_indices = zarr.open_group(input.indices_fname())["indices"]
+    rawcat_indices = zarr.open_group(input.indices_fname(), mode="r")["indices"]
 
     print("# Reading Catalog {}...".format(input.master_fname()))
-    root = zarr.open_group(input.master_fname())
+    root = zarr.open_group(input.master_fname(), mode="r")
     rawcat = root["catalog"]
 
     print("# Extracting colums from the catalog...")
@@ -215,7 +215,7 @@ def createSDHOD_Catalog(config: str) -> None:
     hodtable = fits.getdata(input.SDHOD_fname())
 
     print("# Reading the halo catalog from {}...".format(input.master_fname()))
-    store = zarr.open_group(input.master_fname(), mode="w")
+    store = zarr.open_group(input.master_fname(), mode="r")
     rawcat = store["catalog"]
 
     c_kind = rawcat["kind"]
