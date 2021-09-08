@@ -22,8 +22,20 @@ except ModuleNotFoundError:
 
 print("# Running numbercounts.py with {}".format(sys.argv[1]))
 
+myrun=None
+if len(sys.argv)>=3:
+    if sys.argv[2].isdigit and input.cat_type is 'pinocchio':
+        myrun=int(sys.argv[2])
+        print("# I will process run number {}".format(myrun))
+    else:
+        print("# WARNING: unrecognised command-line option {}".format(sys.argv[2]))
+else:
+    if input.cat_type is 'pinocchio':
+        myrun=input.pinocchio_first_run
+        print("# I will process run number {}".format(myrun))
+
 # data catalog
-fname = input.galcat_fname()
+fname = input.galcat_fname(myrun)
 
 print("# loading catalog {}...".format(fname))
 
@@ -40,8 +52,9 @@ sky_coverage=input.sqdegonthesky * sky_fraction
 
 # selection
 if input.selection_data_tag is not None:
-    print("# loading selection {}...".format(input.selection_data_fname()))
-    selection = fits.getdata(input.selection_data_fname())['SELECTION']
+    fname = input.selection_data_fname(run=myrun)
+    print("# loading selection {}...".format(fname))
+    selection = fits.getdata(fname)['SELECTION']
 else:
     selection = np.ones(len(cat),dtype=bool)
 
@@ -66,16 +79,16 @@ for i in range(nzbins):
     print("# Processing redshift interval [{},{}]".format(z1,z2))
 
     zsel  = (cat[input.redshift_key]>=z1) & (cat[input.redshift_key]<z2)
-    Ngal  = np.histogram(cat[input.my_flux_key][selection & zsel],bins=flux_bins)[0]
+    Ngal  = np.histogram(cat[input.flux_key][selection & zsel],bins=flux_bins)[0]
     isCen = cat['kind'][selection & zsel]==0
-    Ncen  = np.histogram(cat[input.my_flux_key][selection & zsel][isCen], bins=flux_bins)[0]
+    Ncen  = np.histogram(cat[input.flux_key][selection & zsel][isCen], bins=flux_bins)[0]
 
     LF=Ngal/sky_coverage/(z2-z1)/DeltaF
     LF_cen=Ncen/sky_coverage/(z2-z1)/DeltaF
     LF_sat=(Ngal-Ncen)/sky_coverage/(z2-z1)/DeltaF
 
     ## Writes on file
-    fname = input.numbercounts_fname(z1,z2)
+    fname = input.numbercounts_fname(z1,z2,run=myrun)
     print("# Writing results in file {}".format(fname))
 
     flux_counts = np.empty(Ngal.size,

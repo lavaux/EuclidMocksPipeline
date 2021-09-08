@@ -2,7 +2,7 @@ import numpy as np
 from astropy.io import fits
 
 '''
-Given a measured SDHOD, this libraty provides the 
+Given a measured SDHOD, this library provides the 
 Ncen(log halo mass, redshift) 
 and 
 Nsat(log halo mass, redshift)

@@ -35,7 +35,6 @@ if selection is not None:
 else:
     mysel = np.ones(len(cat),dtype=bool)
 
-
 print("Filtering catalog...")
 filter = (cat['true_redshift_gal']>=z1) & (cat['true_redshift_gal']<z2) & mysel
 

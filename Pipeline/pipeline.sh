@@ -26,60 +26,23 @@ unset __conda_setup
 conda activate py3
 cd /euclid_data/pmonaco/EuclidMocks/Pipeline
 
-#python -u applyFootprintToMasterCatalog.py input
+# python -u applyFootprintToMasterCatalog.py input_SC8
+# python -u extractGalaxyCatalogFromMaster.py input_SC8
+python -u dndz.py input_SC8
+python -u createRandom.py input_SC8
+python -u writeCatalogs4LE3.py input_SC8
+python -u createPkScripts.py input_SC8
 
-#python -u createSmoothHOD.py input_m1_FO
-#python -u createSmoothHOD.py input_m3_FO
+for tag in 0 ns et mw 1 2
+do
 
-#python -u extractGalaxyCatalogFromMaster.py input_m1_FO
-#python -u extractGalaxyCatalogFromMaster.py input_m3_FO
+    python -u createSelection.py input_SC8_lut$tag
+    python -u dndz.py input_SC8_lut$tag
+    python -u createSelection.py input_SC8_lut$tag 1
+    python -u writeCatalogs4LE3.py input_SC8_lut$tag
+    python -u createPkScripts.py input_SC8_lut$tag
+    python -u createRandom.py input_SC8_lut${tag}_dsrand
+    python -u writeCatalogs4LE3.py input_SC8_lut${tag}_dsrand
+    python -u createPkScripts.py input_SC8_lut${tag}_dsrand
 
-# SDHOD, model 1, real space
-cat input_template.py | sed -e 's\FOOTTAG\None\' | sed -e 's\LFMODEL\1\' | sed -e 's\CATTYPE\sdhod\' | sed -e 's\SHUFFLE\False\' | sed -e 's\SELDATA\None\' | sed -e 's\SELRAND\None\' | sed -e 's\RSDFLAG\False\' > my_input.py
-
-python -u createSDHOD_Catalog.py my_input
-python -u createRandom.py my_input
-# python -u createSelection.py my_input
-# python -u createSelection.py my_input random
-python -u dndz.py my_input
-python -u numbercounts.py my_input
-python -u writeCatalogs4LE3.py my_input
-python -u createPkScripts.py my_input
-
-# SDHOD, model 1, redshift space
-cat input_template.py | sed -e 's\FOOTTAG\None\' | sed -e 's\LFMODEL\1\' | sed -e 's\CATTYPE\sdhod\' | sed -e 's\SHUFFLE\False\' | sed -e 's\SELDATA\None\' | sed -e 's\SELRAND\None\' | sed -e 's\RSDFLAG\True\' > my_input.py
-
-python -u createSDHOD_Catalog.py my_input
-python -u createRandom.py my_input
-# python -u createSelection.py my_input
-# python -u createSelection.py my_input random
-python -u dndz.py my_input
-python -u numbercounts.py my_input
-python -u writeCatalogs4LE3.py my_input
-python -u createPkScripts.py my_input
-
-# SDHOD, model 3, real space
-cat input_template.py | sed -e 's\FOOTTAG\None\' | sed -e 's\LFMODEL\3\' | sed -e 's\CATTYPE\sdhod\' | sed -e 's\SHUFFLE\False\' | sed -e 's\SELDATA\None\' | sed -e 's\SELRAND\None\' | sed -e 's\RSDFLAG\False\' > my_input.py
-
-python -u createSDHOD_Catalog.py my_input
-python -u createRandom.py my_input
-# python -u createSelection.py my_input
-# python -u createSelection.py my_input random
-python -u dndz.py my_input
-python -u numbercounts.py my_input
-python -u writeCatalogs4LE3.py my_input
-python -u createPkScripts.py my_input
-
-# SDHOD, model 3, redshift space
-cat input_template.py | sed -e 's\FOOTTAG\None\' | sed -e 's\LFMODEL\3\' | sed -e 's\CATTYPE\sdhod\' | sed -e 's\SHUFFLE\False\' | sed -e 's\SELDATA\None\' | sed -e 's\SELRAND\None\' | sed -e 's\RSDFLAG\True\' > my_input.py
-
-python -u createSDHOD_Catalog.py my_input
-python -u createRandom.py my_input
-# python -u createSelection.py my_input
-# python -u createSelection.py my_input random
-python -u dndz.py my_input
-python -u numbercounts.py my_input
-python -u writeCatalogs4LE3.py my_input
-python -u createPkScripts.py my_input
-
-
+done

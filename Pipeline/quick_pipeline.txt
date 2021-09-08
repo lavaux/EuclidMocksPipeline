@@ -1,0 +1,44 @@
+
+# these are typically not used in a production pipeline but are run only once
+createFootprint.py                       # example script
+createFullOctantFootprint.py             # this creates an octant footprint for flagship
+createIndicesForSats.py                  # must be run on a master to measure the SDHOD
+createSmoothHOD.py input                 # measures the HOD from a flagship master
+
+# these are the main scripts to be used in a pipeline
+applyFootprintToMasterCatalog.py input   # produces a smaller (rotated?) master
+
+extractGalaxyCatalogFromMaster.py input  # extracts a galaxy catalog from the master
+
+createSDHODCatalog.py input              # creates an SDHOD galaxy catalog from a halo catalog
+
+createSDHODfromPinocchio.py input        # creates a set of galaxy catalog from pinocchio lightcones
+
+dndz.py input                            # measures the n(z) of a galaxy catalog
+
+createRandom.py input                    # creates the random (before selection)
+
+createSelection.py input [random]        # creates a selection of galaxy or random
+
+writeCatalogs4LE3.py input               # writes the catalog in redshift bins
+
+numbercounts.py input                    # number counts for redshift bins
+
+maps_and_cls.py input                    # measurement of angular clustering  WORK IN PROGRESS
+
+createPkScripts.py input                 # creates the script and param files for PK
+
+# plotting scritps
+visualizeHOD.py input                    
+plot_dndz.py input
+plot_numbercounts.py input
+plot_pk.py input
+plot_cls.py input                   WORK IN PROGRESS
+angular_map.py filename selection zmin zmax   # quick plot of an angular map
+
+# tools
+sdhod.py
+matchPinocchioHaloMasses.py
+NFW.py
+pozzettiLF.py
+ReadPinocchio.py
