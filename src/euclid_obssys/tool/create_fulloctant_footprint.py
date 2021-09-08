@@ -7,7 +7,7 @@ from ..config import readConfig
 
 
 @register_tool
-def createFootprint(outdir: str = "Products") -> None:
+def createFullOctantFootprint(outdir: str = "Products") -> None:
     import numpy as np
     import matplotlib
 

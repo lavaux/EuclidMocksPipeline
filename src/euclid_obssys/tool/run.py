@@ -1,5 +1,17 @@
 from . import get_tools
-from . import input_generator , footprint, extract, hod, random, dn_dz, numbercounts, create_footprint
+from . import (
+    input_generator,
+    footprint,
+    extract,
+    hod,
+    random,
+    dn_dz,
+    numbercounts,
+    create_footprint,
+    create_fulloctant_footprint,
+    indices_for_sats
+)
+
 
 class EuclidTool(object):
     """Euclid Observational systematics toolbox

@@ -29,7 +29,7 @@ print("# Running applyFootprintToMasterCatalog.py with {}".format(sys.argv[1]))
 print("# loading catalog...")
 
 # input raw catalog
-cat = fits.getdata(input['build_fname']('RawCatalogs',[input['query'],None]))
+cat = fits.getdata(input.build_fname('RawCatalogs',[input['query'],None]))
 
 # loads the survey footprint in equatorial coordinates
 footprint_res, footprint_zrange, sky_fraction, footprint = input['read_footprint']()
