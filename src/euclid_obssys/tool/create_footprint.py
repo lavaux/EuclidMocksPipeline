@@ -21,7 +21,7 @@ def createFootprint(outdir: str = "Products") -> None:
 
     # these are the parameters of the footprint, please copy them to the input file
 
-    footprint_fname = outdir + "Footprints/100sqdeg.fits"
+    footprint_fname = path.join(outdir, "Footprints", "100sqdeg.fits")
     footprint_res = 2048
     footprint_tag = "100sqdeg"
     footprint_zrange = [0.8, 2.0]
@@ -34,7 +34,10 @@ def createFootprint(outdir: str = "Products") -> None:
     # NOTE: This is the new name for this map
     reddening = hp.ud_grade(
         hp.read_map(
-            outdir + "ExtinctionMaps/COM_CompMap_ThermalDust-commander_2048_R2.00.fits",
+            path.join(
+                outdir,
+                "ExtinctionMaps/COM_CompMap_ThermalDust-commander_2048_R2.00.fits",
+            ),
             field=2,
         ),
         footprint_res,
@@ -61,7 +64,7 @@ def createFootprint(outdir: str = "Products") -> None:
     foot2 = reddening.copy()
     foot2[footprint] *= 2
     hp.mollview(foot2, max=1000)
-    plt.savefig(outdir + "Plots/100sqdeg.png")
+    plt.savefig(path.join(outdir, "Plots", "100sqdeg.png"))
 
     # writes footprint on fits file
     print("## writing footprint on file {}".format(footprint_fname))
