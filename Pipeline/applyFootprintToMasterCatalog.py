@@ -10,6 +10,10 @@ import sys
 from os import path
 from euclid_obssys import readConfig
 
+#
+# TO DO: INSERT ROTATION AND REPORT IT IN THE FOOTPRINT
+#
+
 if len(sys.argv)<2:
     print("Usage: python {} [my input file]".format(sys.argv[0]))
     sys.exit(0)

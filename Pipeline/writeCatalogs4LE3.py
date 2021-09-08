@@ -151,13 +151,27 @@ def write_catalog(fname, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_E
 
 print("# Running writeCatalog4LE3.py with {}".format(sys.argv[1]))
 
-dndz = astrofits.getdata(input.dndz_fname())
+r1=input.pinocchio_first_run
+r2=input.pinocchio_last_run
+if input.cat_type is 'pinocchio':
+    n1=r1
+    if r2 is not None:
+        n2=r2
+    else:
+        n2=n1
+else:
+    n1=n2=0
 
+fname = input.dndz_fname(r1=r1,r2=r2)
+print("# Reading dndz from {}".format(fname))
+dndz = astrofits.getdata(fname)
+
+# you can skip the writing of the random
 if input.WriteLE3Random:
     print("# reading random catalog {}...".format(input.random_fname()))
     randomcat = astrofits.getdata(input.random_fname())
 
-    if input.selection_random_tag is not None:
+    if (not input.apply_dataselection_to_random) & (input.selection_random_tag is not None):
         fname=input.selection_random_fname()
         print("# reading selection of random from file {}...".format(fname))
         selection = astrofits.getdata(fname)['SELECTION']
@@ -169,7 +183,7 @@ if input.WriteLE3Random:
         zmin = zshell[0]
         zmax = zshell[1]
 
-        print("# selecting the shell at z=%3.1f-%3.1f..."%(zmin,zmax))
+        print("# selecting the shell at z=%f-%f..."%(zmin,zmax))
         sel = selection & (randomcat[input.redshift_key] >= zmin) & (randomcat[input.redshift_key] < zmax)
         print("# computing weights...")
         density = np.interp(randomcat[input.redshift_key][sel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
@@ -183,30 +197,37 @@ if input.WriteLE3Random:
     del randomcat
 
 
-print("# reading data catalog {}...".format(input.galcat_fname()))
-cat = astrofits.getdata(input.galcat_fname())
-zused = cat[input.redshift_key]
-if input.selection_data_tag is not None:
-    fname = input.selection_data_fname()
-    print("# loading selection {}...".format(fname))
-    selection = astrofits.getdata(fname)['SELECTION']
+if input.cat_type is not 'pinocchio':
+    toprocess=[None]
 else:
-    selection = np.ones(zused.size,dtype=bool)
+    toprocess=range(n1,n2+1)
 
-for zshell in input.finalCatZShell:
+for myrun in toprocess:
+    fname=input.galcat_fname(myrun)
+    print("# reading data catalog {}...".format(fname))
+    cat = astrofits.getdata(fname)
+    zused = cat[input.redshift_key]
+    if input.selection_data_tag is not None:
+        fname = input.selection_data_fname(run=myrun)
+        print("# loading selection {}...".format(fname))
+        selection = astrofits.getdata(fname)['SELECTION']
+    else:
+        selection = np.ones(zused.size,dtype=bool)
 
-    zmin = zshell[0]
-    zmax = zshell[1]
+    for zshell in input.finalCatZShell:
 
-    print("# selecting the shell at z=%3.1f-%3.1f..."%(zmin,zmax))
-    mysel = (zused >= zmin) & (zused < zmax) & selection
-    print("# computing weights...")
-    density = np.interp(zused[mysel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
+        zmin = zshell[0]
+        zmax = zshell[1]
 
-    print("# writing data file {}".format(input.LE3_data_fname(zmin,zmax)))
-    write_catalog(input.LE3_data_fname(zmin,zmax),
-                  cat['ra_gal'][mysel], cat['dec_gal'][mysel], zused[mysel], 
-                  density, type = "DATA", format = 'fits')
+        print("# selecting the shell at z=%f-%f..."%(zmin,zmax))
+        mysel = (zused >= zmin) & (zused < zmax) & selection
+        print("# computing weights...")
+        density = np.interp(zused[mysel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
+
+        fname = input.LE3_data_fname(zmin,zmax,myrun)
+        print("# writing data file {}".format(fname))
+        write_catalog(fname, cat['ra_gal'][mysel], cat['dec_gal'][mysel], zused[mysel], 
+                      density, type = "DATA", format = 'fits')
 
 
 print("# DONE!")

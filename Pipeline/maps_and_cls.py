@@ -19,6 +19,10 @@ except ModuleNotFoundError:
     sys.exit(0)
 
 
+print("Sorry, this is still work in progress!")
+sys.exit(0)
+
+
 def delta_map (ra, dec, footprint, radians=False):
 # this function builds a density contrast from a list of galaxies
 # pix: healpix sky pixel where the galaxy falls
@@ -56,9 +60,8 @@ def write_delta(d,fname):
     fits.writeto(fname,towrite,overwrite=True)
     del towrite
 
-
-
 print("# Running maps_and_cls.py with {}".format(sys.argv[1]))
+
 
 # reads the survey footprint in equatorial coordinates
 footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
@@ -70,8 +73,9 @@ ell=np.arange(3*footprint_res)
 
 for zmin,zmax in input.finalCatZShell:
 
-    print("## reading file %s"%input.LE3_random_fname(zmin, zmax))
-    data = fits.getdata(input.LE3_random_fname(zmin,zmax))
+    fname = input.LE3_random_fname(zmin, zmax)
+    print("## reading file %s"%fname)
+    data = fits.getdata(fname)
     print("## computing density map on %d galaxies"%len(data))
     delta = delta_map(data['RA'], data['DEC'],footprint)
 
@@ -82,14 +86,14 @@ for zmin,zmax in input.finalCatZShell:
     else:
         cl_rand = np.zeros_like(3*footprint_res)
 
-
-    print("## reading file %s"%input.LE3_data_fname(zmin,zmax))
-    data = fits.getdata(input.LE3_data_fname(zmin,zmax))
+    fname = input.LE3_data_fname(zmin,zmax, run=input.pinocchio_first_run)
+    print("## reading file %s"%fname)
+    data = fits.getdata(fname)
     print("## computing density map on %d galaxies"%len(data))
     delta = delta_map(data['RA'], data['DEC'],footprint)
 
     if delta is not None:
-        write_delta(delta,input.delta_data_fname(zmin,zmax))
+        write_delta(delta,input.delta_data_fname(zmin,zmax, run=input.pinocchio_first_run))
         print("## computing Cls")
         cl_data = hp.anafast(delta)/sky_fraction
     else:
@@ -120,7 +124,7 @@ for zmin,zmax in input.finalCatZShell:
     fullsize = len(keep_table)*len(c[1])* 8 / 1024 / 1024.
     print(str("+   ~%.2f MB in memory" % fullsize))
 
-    fname = input.cls_fname(zmin,zmax)
+    fname = input.cls_fname(zmin,zmax, run=input.pinocchio_first_run)
     print("## Writing FITS: %s" % fname)
     fitsfile = FITS(fname,'rw')
     fitsfile.write_table(data=keep_table, header=hdr)

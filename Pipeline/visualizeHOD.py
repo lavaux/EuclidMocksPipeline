@@ -28,7 +28,6 @@ print("# Running visualizeHOD.py with {}".format(sys.argv[1]))
 
 c=np.array(['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
 
-#sdhod = fits.getdata('../Products/SDHOD/8614_sdhod_L5_deltaz_0.01_model_3_concentration_diemer19.fits')
 sdhod = fits.getdata(input.SDHOD_fname())
 
 izbins=np.arange(12)*10
@@ -56,7 +55,7 @@ plt.xlabel('halo mass (Msun/h)')
 plt.ylabel(r'$N_{\rm cen} (M_h|z)$')
 plt.legend()
 plt.show()
-plt.savefig('../Products/Plots/SDHOD_centrals.png')
+plt.savefig(input.outdir + 'Plots/SDHOD_centrals.png')
 
 plt.figure()
 plt.title('SD-HOD, satellites')
@@ -78,5 +77,5 @@ plt.xlabel('halo mass (Msun/h)')
 plt.ylabel(r'$N_{\rm cen} (M_h|z)$')
 plt.legend()
 plt.show()
-plt.savefig('../Products/Plots/SDHOD_centrals.png')
+plt.savefig(input.outdir + 'Plots/SDHOD_centrals.png')
 

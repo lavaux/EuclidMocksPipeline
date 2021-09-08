@@ -33,18 +33,29 @@ cat = zarr.open_group(input['master_fname'](), mode="r")['catalog']
 
 print("# selecting galaxies...")
 
-selection = cat[input['flux_key']] > input['logflux_limit']
+selection = cat[input.flux_key] > input.logflux_limit
+if input.lf_model=='0':
+    selection &= cat['kind']==0
 
 Nextract = selection.sum()
 
 print("# extracting {} galaxies".format(Nextract))
 
-extract = np.empty(Nextract, 
-                   dtype=[('x_gal', float), ('y_gal', float), ('z_gal', float),
-                          ('ra_gal', float), ('dec_gal', float), ('kind', int), 
-                          ('true_redshift_gal', float), ('observed_redshift_gal', float), 
-                          ('halo_lm', float), ('galaxy_id', int), ('halo_id', int), 
-                          (input['flux_key'], float), ('sh_'+input['flux_key'], float)])
+
+if input.flux_key=='halo_lm':
+    extract = np.empty(Nextract, 
+                       dtype=[('x_gal', float), ('y_gal', float), ('z_gal', float),
+                              ('ra_gal', float), ('dec_gal', float), ('kind', int), 
+                              ('true_redshift_gal', float), ('observed_redshift_gal', float), 
+                              ('halo_lm', float), ('galaxy_id', int), ('halo_id', int), 
+                              ('sh_'+input.flux_key, float)])
+else:
+    extract = np.empty(Nextract, 
+                       dtype=[('x_gal', float), ('y_gal', float), ('z_gal', float),
+                              ('ra_gal', float), ('dec_gal', float), ('kind', int), 
+                              ('true_redshift_gal', float), ('observed_redshift_gal', float), 
+                              ('halo_lm', float), ('galaxy_id', int), ('halo_id', int), 
+                              (input.flux_key, float), ('sh_'+input.flux_key, float)])
 
 for field in extract.dtype.names:
     print("    processing {}".format(field))

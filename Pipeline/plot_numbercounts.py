@@ -25,6 +25,18 @@ if not input.PLOT:
     print("Plots are not required, exiting...")
     sys.exit(0)
 
+myrun=None
+if len(sys.argv)>=3:
+    if sys.argv[2].isdigit and input.cat_type is 'pinocchio':
+        myrun=int(sys.argv[2])
+        print("# I will process run number {}".format(myrun))
+    else:
+        print("# WARNING: unrecognised command-line option {}".format(sys.argv[2]))
+else:
+    if input.cat_type is 'pinocchio':
+        myrun=input.pinocchio_first_run
+        print("# I will process run number {}".format(myrun))
+
 # survey footprint in equatorial coordinate
 footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
 sky_coverage=input.sqdegonthesky * sky_fraction
@@ -39,7 +51,7 @@ for i in range(nzbins):
     z1=zbins[i,0]
     z2=zbins[i,1]
 
-    fname = input.numbercounts_fname(z1,z2)
+    fname = input.numbercounts_fname(z1,z2,run=myrun)
     print("# Reading number counts from file {}".format(fname))
     LF = fits.getdata(fname)
 
@@ -82,7 +94,7 @@ for i in range(nzbins):
 
     panel1.legend()
 
-    plt.savefig(input.plot_numbercounts_fname(z1,z2))
+    plt.savefig(input.plot_numbercounts_fname(z1,z2,myrun))
     print("## written image in file {}".format(input.plot_numbercounts_fname(z1,z2)))
 
 

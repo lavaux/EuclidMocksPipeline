@@ -24,48 +24,66 @@ f = open('parameters_pk_slave_fits.ini',mode='r')
 params = Template( f.read() )
 f.close()
 
-print("# starting...")
+print("# Running createPkScripts.py with {}".format(sys.argv[1]))
 
 count=0
 nscript=0
 
-for z1, z2 in input.finalCatZShell:
-
-    print("writing %s"%input.params_fname(z1,z2))
-
-    if input.Lbox is None:
-        clbox='true'
-        lbox=0.
+r1=input.pinocchio_first_run
+r2=input.pinocchio_last_run
+if input.cat_type is 'pinocchio':
+    n1=r1
+    if r2 is not None:
+        n2=r2
     else:
-        clbox='false'
-        lbox=input.Lbox
-    f = open(input.params_fname(z1,z2), "w")
-    f.write(params.substitute(GRID   = input.ngrid,
-                              DATA   = input.exclude_dir(input.LE3_data_fname(z1, z2)), 
-                              RANDOM = input.exclude_dir(input.LE3_random_fname(z1, z2)),
-                              OUTPUT = 'Pks/'+input.exclude_dir(input.pk_fname(z1,z2)),
-                              CLBOX  = clbox, 
-                              LBOX   = lbox))
-    f.close()
+        n2=n1
+else:
+    n1=n2=0
 
-    if count==0:
+if input.cat_type is not 'pinocchio':
+    toprocess=[None]
+else:
+    toprocess=range(n1,n2+1)
 
-        copyfile("eden_slave.sh",input.script_fname(nscript))
-        print("Writing {}".format(input.script_fname(nscript)))
-        script=open(input.script_fname(nscript),"a")
+for myrun in toprocess:
+    for z1, z2 in input.finalCatZShell:
 
-    script.write("\n")
-    script.write("mkdir -p "+input.pk_fname(z1,z2)+"\n")
-    script.write("E-Run LE3_GC_PowerSpectrum  LE3_GC_ComputePowerSpectrum --log-level=DEBUG --parfile=PkParams/"+input.exclude_dir(input.params_fname(z1,z2))+" --workdir=/euclid_data/pmonaco/EuclidMocks/Products"+"\n\n")
+        print("writing %s"%input.params_fname(z1,z2,run=myrun))
 
-    count += 1
-    if count==input.max_PKs_in_script:
-        count=0
-        script.write("echo '### {} DONE! ###'".format(nscript))
-        script.close()
-        nscript+=1
+        if input.Lbox is None:
+            clbox='true'
+            lbox=0.
+        else:
+            clbox='false'
+            lbox=input.Lbox
+        f = open(input.params_fname(z1,z2,run=myrun), "w")
+        f.write(params.substitute(GRID   = input.ngrid,
+                                  DATA   = input.exclude_dir(input.LE3_data_fname(z1, z2, run=myrun)), 
+                                  RANDOM = input.exclude_dir(input.LE3_random_fname(z1, z2)),
+                                  OUTPUT = 'Pks/'+input.exclude_dir(input.pk_fname(z1, z2, run=myrun)),
+                                  CLBOX  = clbox, 
+                                  LBOX   = lbox))
+        f.close()
+
+        if count==0:
+
+            copyfile("eden_slave.sh",input.script_fname(nscript))
+            print("Writing {}".format(input.script_fname(nscript)))
+            script=open(input.script_fname(nscript),"a")
+
+        script.write("\n")
+        script.write("mkdir -p "+input.pk_fname(z1,z2,run=myrun)+"\n")
+        script.write("E-Run LE3_GC_PowerSpectrum  LE3_GC_ComputePowerSpectrum --log-level=DEBUG --parfile=PkParams/"+input.exclude_dir(input.params_fname(z1,z2,run=myrun))+" --workdir="+input.outdir+"\n\n")
+
+        count += 1
+        if count==input.max_PKs_in_script:
+            count=0
+            script.write("echo '### {} DONE! ###'".format(nscript))
+            script.close()
+            nscript+=1
 
 script.write("echo '### {} DONE! ###'".format(nscript))
 script.close()
 
 print("# DONE!")
+
