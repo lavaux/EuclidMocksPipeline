@@ -8,6 +8,7 @@ def generateConfig(
     rsd: bool = False,
     outdir: str = None,
     type: str = "sdhod",
+    footprintTag: str = None
 ) -> None:
     """This generate a configuration file for the Euclid Observational systematics pipeline.
 
@@ -15,7 +16,8 @@ def generateConfig(
         lf_model (int, optional): Luminosity function model to be adopted.
         rsd (bool, optional): Whether redshift space distortions must be applied. Defaults to False.
         outdir (str, optional): Output directory. Defaults to the current working directory.
-        o (str): [description]. Defaults to None.
+        o (str): [description]. Output configuration file Defaults to None.
+        footprintTag (str): footprint to use , e.g. "100sqdeg"
         type (str, optional): Type of mock catalog to generate. Must be one of
             "sdhod", "flagship", "pinocchio", "box".
 
@@ -43,7 +45,7 @@ def generateConfig(
 
     replacements = {
         "OUTDIR": outdir,
-        "FOOTTAG": "None",
+        "FOOTTAG": f"\"{footprintTag}\"" if not footprintTag is None else "None",
         "LFMODEL": repr(lf_model),
         "CATTYPE": type,
         "SHUFFLE": "False",

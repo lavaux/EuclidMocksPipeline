@@ -14,14 +14,13 @@ def applyFootprintToMaster(config: str) -> None:
     import healpy as hp
     import sys
     from os import path
-    from euclid_obssys import readConfig
 
     #
     # TO DO: INSERT ROTATION AND REPORT IT IN THE FOOTPRINT
     #
 
     print(f"# Running applyFootprintToMasterCatalog.py with {config}")
-    input = readConfig(sys.argv[1])
+    input = readConfig(config)
 
     print("# loading catalog...")
 
