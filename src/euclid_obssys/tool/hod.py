@@ -6,7 +6,6 @@ from . import register_tool
 from ..config import readConfig
 
 
-
 @register_tool
 def createSmoothHOD(config: str) -> None:
     """Create a HOD curves to prepare as SDHOD catalog.
@@ -202,6 +201,7 @@ def createSDHOD_Catalog(config: str) -> None:
     from scipy.ndimage import gaussian_filter
     from scipy.stats import poisson
     import healpy as hp
+    import numpy as np
 
     input = readConfig(config)
 
