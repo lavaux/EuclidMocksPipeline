@@ -4,7 +4,7 @@
 ################################################################################
 from . import register_tool
 from euclid_obssys.config import readConfig
-from euclid_obssys.disk import DefaultCatalogWrite
+
 
 @register_tool
 def extractGalaxyCatalogFromMaster(config: str):
@@ -17,7 +17,7 @@ def extractGalaxyCatalogFromMaster(config: str):
     Args:
         config (str): The pipeline configuration file
     """
-    from astropy.io import fits
+    from euclid_obssys.disk import DefaultCatalogWrite, DefaultCatalogRead
     import numpy as np
 
     input = readConfig(config)
@@ -90,7 +90,7 @@ def extractGalaxyCatalogFromMaster(config: str):
     fname = input.flagcat_fname()
 
     print(f"# writing file {fname}")
-    out = DefaultCatalogWrite(fname)
-    fname.set_array("catalog", extract)
+    with DefaultCatalogWrite(fname) as out:
+        out.set_array("catalog", extract)
 
     print("# done!")

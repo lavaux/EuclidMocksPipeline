@@ -17,10 +17,9 @@ def applyFootprintToMaster(config: str):
     Args:
         config (str): Pipeline config file
     """
-    import zarr
     import numpy as np
-    from astropy.io import fits
     import healpy as hp
+    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
 
     input = readConfig(config)
 
@@ -28,7 +27,9 @@ def applyFootprintToMaster(config: str):
     print("# loading catalog...")
 
     # input raw catalog
-    cat = fits.getdata(input.build_fname("RawCatalogs", [input.query, None]))
+    cat = DefaultCatalogRead(input.build_fname("RawCatalogs", [input.query, None]))[
+        "catalog"
+    ]
 
     # loads the survey footprint in equatorial coordinates
     footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
@@ -60,15 +61,11 @@ def applyFootprintToMaster(config: str):
 
     print(f"# Nextract={Nextract} to {input.master_fname()}")
 
-    store = zarr.open_group(input.master_fname(), mode="w")
-    extract = store.empty(
-        shape=(Nextract,), dtype=cat.dtype, chunks=(10000000,), name="catalog"
-    )
+    with DefaultCatalogWrite(input.master_fname()) as store:
+        extract = store.add_array("catalog", shape=(Nextract,), dtype=cat.dtype)
 
-    for field in cat.dtype.names:
-        print(f"# Doing field {field}")
-        extract[field] = cat[field][foot_sel]
-
-    del cat
+        for field in cat.dtype.names:
+            print(f"# Doing field {field}")
+            extract[field] = cat[field][foot_sel]
 
     print("# done!")
