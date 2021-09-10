@@ -82,10 +82,10 @@ def numbercounts(config: str):
       flux_counts = np.empty(Ngal.size,
                              dtype=[('LF', np.float), ('LF_cen', np.float), ('LF_sat',np.float),
                                     ('f_center', np.float), ('f_lower', np.float), ('f_upper', np.float)])
-      flux_counts['LF'] = LF;
-      flux_counts['LF_cen'] = LF_cen;
-      flux_counts['LF_sat'] = LF_sat;
-      flux_counts['f_center'] = xflux;
+      flux_counts['LF'] = LF
+      flux_counts['LF_cen'] = LF_cen
+      flux_counts['LF_sat'] = LF_sat
+      flux_counts['f_center'] = xflux
       flux_counts['f_lower'] = 10.**flux_bins[:-1]
       flux_counts['f_upper'] = 10.**flux_bins[1:]
   

@@ -26,7 +26,7 @@ def createIndicesForSats(config: str) -> None:
     # cat=fits.getdata('../Products/RawCatalogs/8614_100sqdeg.fits')
     # cat=fits.getdata('../Products/catalog.fits')
 
-    print("read ../Products/RawCatalogs/8614_100sqdeg.fits")
+    print(f"read {input.master_fname()}")
 
     halo_id = cat["halo_id"]
     kind = cat["kind"]
