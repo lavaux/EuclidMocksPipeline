@@ -58,8 +58,8 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
         for array_name in self.arrays.keys():
             hdu = fits.BinTableHDU(data=self.arrays[array_name])
             if self.tags_for_arrays[array_name] is not None:
-              for tag_key in self.tags_for_arrays[array_name].keys():
-                 hdu.header[tag_key] = self.tags_for_arrays[array_name][tag_key]
+                for tag_key in self.tags_for_arrays[array_name].keys():
+                    hdu.header[tag_key] = self.tags_for_arrays[array_name][tag_key]
             hdul.append(hdu)
             primary_hdu.header.append((f"TN{table_id}", array_name))
 
@@ -70,7 +70,13 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
         hdul.writeto(self.fname, overwrite=True)
         return None
 
-    def new_array(self, name: str, shape: int, dtype: npt.DTypeLike, tags: Dict[str, object] = None) -> npt.ArrayLike:
+    def new_array(
+        self,
+        name: str,
+        shape: int,
+        dtype: npt.DTypeLike,
+        tags: Dict[str, object] = None,
+    ) -> npt.ArrayLike:
         assert self.exited == False
         a = np.empty(shape, dtype=dtype)
         self.arrays[name] = a
@@ -78,7 +84,9 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
         self.tags_for_arrays[name] = tags
         return a
 
-    def set_array(self, name: str, array: npt.ArrayLike, tags: Dict[str, object] = None) -> None:
+    def set_array(
+        self, name: str, array: npt.ArrayLike, tags: Dict[str, object] = None
+    ) -> None:
         assert self.exited == False
         self.arrays[name] = array
         assert tags is None or type(tags) is dict

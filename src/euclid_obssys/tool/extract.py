@@ -31,7 +31,7 @@ def extractGalaxyCatalogFromMaster(config: str):
 
     # input raw catalog
     with DefaultCatalogRead(input.master_fname()) as cat_file:
-      cat = cat_file["catalog"]
+        cat = cat_file["catalog"]
 
     print("# selecting galaxies...")
 

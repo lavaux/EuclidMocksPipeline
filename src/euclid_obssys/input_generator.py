@@ -5,20 +5,23 @@ import re
 import os
 import sys
 
-def run():
-    input_template = pkg_resources.resource_string(__name__,
-                                                   "templates/input.py").decode('utf-8')
 
-    parser = ap.ArgumentParser(
-        description="generate config file for Euclid mock")
+def run():
+    input_template = pkg_resources.resource_string(
+        __name__, "templates/input.py"
+    ).decode("utf-8")
+
+    parser = ap.ArgumentParser(description="generate config file for Euclid mock")
     parser.add_argument("--lf_model", type=int, default=1)
-    parser.add_argument("--type",
-                        choices=["sdhod", "flagship", "pinocchio", "box"],
-                        type=str,
-                        default="sdhod")
-    parser.add_argument("--rsd",choices=["false","true"],default="false")
-    parser.add_argument("--outdir",type=str,default=os.getcwd())
-    parser.add_argument("-o",type=str)
+    parser.add_argument(
+        "--type",
+        choices=["sdhod", "flagship", "pinocchio", "box"],
+        type=str,
+        default="sdhod",
+    )
+    parser.add_argument("--rsd", choices=["false", "true"], default="false")
+    parser.add_argument("--outdir", type=str, default=os.getcwd())
+    parser.add_argument("-o", type=str)
 
     args = parser.parse_args()
 
@@ -30,14 +33,14 @@ def run():
         "SHUFFLE": "False",
         "SELDATA": "None",
         "SELRAND": "None",
-        "RSDFLAG": repr(args.rsd == "true")
+        "RSDFLAG": repr(args.rsd == "true"),
     }
 
     print("Output directory is {}".format(args.outdir))
 
     if args.o is None:
-      print("Output file is required.")
-      sys.exit(1)
+        print("Output file is required.")
+        sys.exit(1)
 
     for k, v in replacements.items():
         input_template = re.sub(k, v, input_template)
