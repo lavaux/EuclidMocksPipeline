@@ -66,6 +66,9 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
         self.arrays[name] = array
 
     def add_tag(self, tagname: str, tagdata: str):
+        if type(tagdata) is not str:
+            tagdata = repr(tagdata)
+            
         self.tags[tagname] = tagdata
 
 

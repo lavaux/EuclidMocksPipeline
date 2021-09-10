@@ -10,7 +10,7 @@ from . import (
     create_footprint,
     create_fulloctant_footprint,
     indices_for_sats,
-    apply_footprint
+    apply_footprint,
 )
 
 

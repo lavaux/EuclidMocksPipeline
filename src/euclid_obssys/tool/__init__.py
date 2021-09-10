@@ -5,7 +5,7 @@ _toolbox = []
 
 
 def register_tool(function):
-    def new_f(*args,**kwargs):
+    def new_f(*args, **kwargs):
         try:
             function(*args, **kwargs)
         except Exception as e:
@@ -18,7 +18,7 @@ def register_tool(function):
     new_f.__name__ = function.__name__
 
     _toolbox.append(new_f)
-    return new_f 
+    return new_f
 
 
 def get_tools():

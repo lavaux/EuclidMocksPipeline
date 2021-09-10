@@ -9,19 +9,17 @@ from ..config import readConfig
 
 @register_tool
 def createIndicesForSats(config: str) -> None:
-    from astropy.io import fits
     from astropy.table import Table
     import numpy as np
-    from euclid_obssys.config import readConfig
+    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
     import sys
-    import zarr
 
     input = readConfig(config)
 
     print("# Running createIndicesForSats.py")
 
-    source = zarr.open_group(input.master_fname(), mode="r")
-    cat = source["catalog"]
+    with DefaultCatalogRead(input.master_fname()) as source:
+        cat = source["catalog"]
 
     # cat=fits.getdata('../Products/RawCatalogs/8614_100sqdeg.fits')
     # cat=fits.getdata('../Products/catalog.fits')
@@ -94,7 +92,7 @@ def createIndicesForSats(config: str) -> None:
     # fname='../Products/RawCatalogs/8614_100sqdeg_indices.fits'
     # t.write(fname,format='fits',overwrite=True)
 
-    out_index = zarr.open_group(input.indices_fname())
-    out_index["indices"] = halo_index
+    with DefaultCatalogWrite(input.indices_fname()) as store:
+        store.set_array("indices", halo_index)
 
     print("written file " + input.indices_fname())

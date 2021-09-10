@@ -6,6 +6,7 @@ from . import register_tool
 from ..config import readConfig
 import sys
 
+
 @register_tool
 def createRandom(config: str) -> None:
     """Creates a random for the galaxy catalog

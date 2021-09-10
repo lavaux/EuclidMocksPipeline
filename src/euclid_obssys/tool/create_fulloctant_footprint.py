@@ -18,6 +18,7 @@ def createFullOctantFootprint(outdir: str = "Products") -> None:
     from healpy.rotator import Rotator
     import sys
     from os import path
+    from euclid_obssys.disk import DefaultCatalogWrite
 
     # these are the parameters of the footprint
 
@@ -58,17 +59,12 @@ def createFullOctantFootprint(outdir: str = "Products") -> None:
     # writes footprint on fits file
     print("## writing footprint on file {}".format(footprint_fname))
 
-    fg = fits.Column(name="FOOTPRINT_G", array=footprint, format="L")
-    tb = fits.BinTableHDU.from_columns([fg])
-    tb.header.append("RES")
-    tb.header["RES"] = footprint_res
-    tb.header.append("MINZ")
-    tb.header["MINZ"] = footprint_zrange[0]
-    tb.header.append("MAXZ")
-    tb.header["MAXZ"] = footprint_zrange[1]
-    tb.header.append("TAG")
-    tb.header["TAG"] = footprint_tag
-    tb.header.append("SKYFRAC")
-    tb.header["SKYFRAC"] = sky_fraction
+    with DefaultCatalogWrite(footprint_fname) as out_file:
 
-    tb.writeto(footprint_fname, overwrite=True)
+        footprint = footprint.astype([("FOOTPRINT_G", long)])
+        out_file.set_array("footprint", footprint)
+        out_file.add_tag("RES", footprint_res)
+        out_file.add_tag("MINZ", footprint_zrange[0])
+        out_file.add_tag("MAXZ", footprint_zrange[1])
+        out_file.add_tag("TAG", footprint_tag)
+        out_file.add_tag("SKYFRAC", sky_fraction)

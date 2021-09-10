@@ -8,7 +8,7 @@ def generateConfig(
     rsd: bool = False,
     outdir: str = None,
     type: str = "sdhod",
-    footprintTag: str = None
+    footprintTag: str = None,
 ) -> None:
     """This generate a configuration file for the Euclid Observational systematics pipeline.
 
@@ -45,7 +45,7 @@ def generateConfig(
 
     replacements = {
         "OUTDIR": outdir,
-        "FOOTTAG": f"\"{footprintTag}\"" if not footprintTag is None else "None",
+        "FOOTTAG": f'"{footprintTag}"' if not footprintTag is None else "None",
         "LFMODEL": repr(lf_model),
         "CATTYPE": type,
         "SHUFFLE": "False",

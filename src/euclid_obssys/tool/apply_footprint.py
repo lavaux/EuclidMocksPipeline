@@ -9,11 +9,10 @@ from euclid_obssys.config import readConfig
 @register_tool
 def applyFootprintToMaster(config: str) -> None:
     import numpy as np
-    import zarr
-    from astropy.io import fits
     import healpy as hp
     import sys
     from os import path
+    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
 
     #
     # TO DO: INSERT ROTATION AND REPORT IT IN THE FOOTPRINT
@@ -25,7 +24,10 @@ def applyFootprintToMaster(config: str) -> None:
     print("# loading catalog...")
 
     # input raw catalog
-    cat = fits.getdata(input.build_fname("RawCatalogs", [input["query"], None]))
+    with DefaultCatalogRead(
+        input.build_fname("RawCatalogs", [input["query"], None])
+    ) as cat_file:
+        cat = cat_file["catalog"]
 
     # loads the survey footprint in equatorial coordinates
     footprint_res, footprint_zrange, sky_fraction, footprint = input["read_footprint"]()
@@ -58,20 +60,17 @@ def applyFootprintToMaster(config: str) -> None:
 
     print(f"# Nextract={Nextract}")
 
-    store = zarr.open_group(input["master_fname"](), mode="w")
-    extract = store.empty(
-        shape=(Nextract,), dtype=cat.dtype, chunks=(10000000,), name="catalog"
-    )
+    with DefaultCatalogWrite(input.master_fname()) as store:
 
-    # extract = np.empty(Nextract, dtype=cat.dtype)
+        extract = store.add_array("catalog", shape=(Nextract,), dtype=cat.dtype)
 
-    for field in cat.dtype.names:
-        print(f"# Doing field {field}")
-        extract[field] = cat[field][foot_sel]
-    # foot_sel] = zarr.copy(cat[foot_sel], extract, log=sys.stdout)
-    # =cat[field][foot_sel]
+        # extract = np.empty(Nextract, dtype=cat.dtype)
 
-    del cat
+        for field in cat.dtype.names:
+            print(f"# Doing field {field}")
+            extract[field] = cat[field][foot_sel]
+        # foot_sel] = zarr.copy(cat[foot_sel], extract, log=sys.stdout)
+        # =cat[field][foot_sel]
 
     # print('# writing catalog to file {}/RawCatalogs/{}_{}.fits'.format(input['outdir'],input['query'],input['footprint_tag']))
 
