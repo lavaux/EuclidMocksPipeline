@@ -21,16 +21,19 @@ def catalog_read(temp_catalog_name):
 
 
 @pytest.fixture(autouse=True)
-def test_array_write(catalog_write):
-    a = catalog_write.new_array("array1", (100,), dtype=[('a',float)])
+def array_write(catalog_write):
+    a = catalog_write.new_array("array1", (100,), dtype=[('a',float)], tags={"some":1})
     a[:] = np.arange(100)
 
 @pytest.fixture(autouse=True)
 def test_tag_write(catalog_write):
     catalog_write.add_tag('hello','world')
 
+def test_array_write(array_write):
+    pass
+
 def test_array_read(temp_catalog_name):
-    with eo_d.CatalogFitsRead("test.fits") as cat:
+    with eo_d.CatalogFitsRead(temp_catalog_name) as cat:
       assert cat.get_tag('hello') == 'world'
       a = cat.get_array('array1')['a']
       assert (np.equal(a, np.arange(100))).all()

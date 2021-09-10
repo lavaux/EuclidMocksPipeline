@@ -96,7 +96,6 @@ ngrid = 1024
 
 # this is for reading a footprint file
 def read_footprint():
-
     if footprint_tag is None:
         footprint_fname = path.join(outdir,'Footprints','FullOctant.fits')
     else:
@@ -109,10 +108,11 @@ def read_footprint():
         return None
 
     ff=fits.open(footprint_fname)
-    footprint_res    = ff[1].header['RES']
-    footprint_zrange = [ ff[1].header['MINZ'], ff[1].header['MAXZ'] ]
-    sky_fraction     = ff[1].header['SKYFRAC']
+    footprint_res    = ff[0].header['RES']
+    footprint_zrange = [ ff[0].header['MINZ'], ff[0].header['MAXZ'] ]
+    sky_fraction     = ff[0].header['SKYFRAC']
 
+    print(ff)
     return footprint_res, footprint_zrange, sky_fraction, ff[1].data['FOOTPRINT_G']
 
 SPEEDOFLIGHT = 299792.0 # Km/s

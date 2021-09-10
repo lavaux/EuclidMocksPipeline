@@ -93,6 +93,6 @@ def createIndicesForSats(config: str) -> None:
     # t.write(fname,format='fits',overwrite=True)
 
     with DefaultCatalogWrite(input.indices_fname()) as store:
-        store.set_array("indices", halo_index)
+        store.set_array("indices",  halo_index.astype([("indices", int)]))
 
     print("written file " + input.indices_fname())

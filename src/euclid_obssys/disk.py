@@ -1,3 +1,4 @@
+from typing import Dict
 from abc import ABC, abstractmethod
 from astropy.io import fits
 from contextlib import AbstractContextManager
@@ -26,6 +27,10 @@ class AbstractCatalogRead(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_tag_for_array(self, name: str) -> Dict[str, object]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def __getitem__(self, name: str) -> npt.ArrayLike:
         raise NotImplementedError()
 
@@ -35,6 +40,7 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
         self.fname = fname
         self.arrays = {}
         self.tags = {}
+        self.tags_for_arrays = {}
         self.exited = False
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -50,7 +56,11 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
 
         table_id = 1
         for array_name in self.arrays.keys():
-            hdul.append(fits.BinTableHDU(data=self.arrays[array_name]))
+            hdu = fits.BinTableHDU(data=self.arrays[array_name])
+            if self.tags_for_arrays[array_name] is not None:
+              for tag_key in self.tags_for_arrays[array_name].keys():
+                 hdu.header[tag_key] = self.tags_for_arrays[array_name][tag_key]
+            hdul.append(hdu)
             primary_hdu.header.append((f"TN{table_id}", array_name))
 
         basepath, _ = os.path.split(self.fname)
@@ -60,19 +70,23 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
         hdul.writeto(self.fname, overwrite=True)
         return None
 
-    def new_array(self, name: str, shape: int, dtype: npt.DTypeLike) -> npt.ArrayLike:
+    def new_array(self, name: str, shape: int, dtype: npt.DTypeLike, tags: Dict[str, object] = None) -> npt.ArrayLike:
         assert self.exited == False
         a = np.empty(shape, dtype=dtype)
         self.arrays[name] = a
+        assert tags is None or type(tags) is dict
+        self.tags_for_arrays[name] = tags
         return a
 
-    def set_array(self, name: str, array: npt.ArrayLike) -> None:
+    def set_array(self, name: str, array: npt.ArrayLike, tags: Dict[str, object] = None) -> None:
         assert self.exited == False
         self.arrays[name] = array
+        assert tags is None or type(tags) is dict
+        self.tags_for_arrays[name] = tags
 
-    def add_tag(self, tagname: str, tagdata: str):
+    def add_tag(self, tagname: str, tagdata: object) -> None:
         if type(tagdata) is not str:
-            tagdata = repr(tagdata)
+            tagdata = tagdata
 
         self.tags[tagname] = tagdata
 
@@ -91,7 +105,7 @@ class CatalogFitsRead(AbstractCatalogRead, AbstractContextManager):
                 self.arrays[self.header[f"TN{i}"]] = i
         return self
 
-    def get_tag(self, name: str) -> str:
+    def get_tag(self, name: str) -> object:
         return self.header[name]
 
     def get_array(self, name: str) -> npt.ArrayLike:
@@ -99,6 +113,12 @@ class CatalogFitsRead(AbstractCatalogRead, AbstractContextManager):
             return self.file[self.arrays[name]].data[:]
         else:
             return self.file[int(name)].data[:]
+
+    def get_tag_for_array(self, name: str) -> Dict[str, object]:
+        if not self.arrays is None:
+            return self.file[self.arrays[name]].header
+        else:
+            return self.file[int(name)].header
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.file.close()

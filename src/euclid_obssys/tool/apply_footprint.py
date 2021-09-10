@@ -27,7 +27,7 @@ def applyFootprintToMaster(config: str) -> None:
     with DefaultCatalogRead(
         input.build_fname("RawCatalogs", [input["query"], None])
     ) as cat_file:
-        cat = cat_file["catalog"]
+        cat = cat_file[1]
 
     # loads the survey footprint in equatorial coordinates
     footprint_res, footprint_zrange, sky_fraction, footprint = input["read_footprint"]()
@@ -62,7 +62,7 @@ def applyFootprintToMaster(config: str) -> None:
 
     with DefaultCatalogWrite(input.master_fname()) as store:
 
-        extract = store.add_array("catalog", shape=(Nextract,), dtype=cat.dtype)
+        extract = store.new_array("catalog", shape=(Nextract,), dtype=cat.dtype)
 
         # extract = np.empty(Nextract, dtype=cat.dtype)
 
