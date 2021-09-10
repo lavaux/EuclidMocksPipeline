@@ -17,12 +17,11 @@ def createSmoothHOD(config: str) -> None:
     """
     from .. import sdhod, NFW, utils
     import numpy as np
-    from astropy.io import fits
     from colossus.cosmology import cosmology
+    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
     from scipy.ndimage import gaussian_filter
     from scipy.stats import poisson
     import healpy as hp
-    import zarr
 
     input = readConfig(config)
 
@@ -33,11 +32,12 @@ def createSmoothHOD(config: str) -> None:
 
     # Import the Raw Catalog
     print("# Reading indices from file {}...".format(input.indices_fname()))
-    rawcat_indices = zarr.open_group(input.indices_fname(), mode="r")["indices"]
+    with DefaultCatalogRead(input.indices_fname()) as cat_file:
+        rawcat_indices = cat_file["indices"]["indices"]
 
     print("# Reading Catalog {}...".format(input.master_fname()))
-    root = zarr.open_group(input.master_fname(), mode="r")
-    rawcat = root["catalog"]
+    with DefaultCatalogRead(input.master_fname()) as cat_file:
+        rawcat = cat_file["catalog"]
 
     print("# Extracting colums from the catalog...")
     good = np.array(rawcat_indices) > 0
@@ -148,10 +148,9 @@ def createSmoothHOD(config: str) -> None:
 
     print("# Writing file {}...".format(input.SDHOD_fname()))
 
-    # Write SDHOD in fits file
-    cat = np.empty(
-        1,
-        dtype=[
+    with DefaultCatalogWrite(input.SDHOD_fname()) as out_file:
+
+        cat =out_file.new_array("sdhod", shape=(1,),dtype=[
             ("n_halos", float, (zbins.size - 1, Mbins.size - 1)),
             ("n_cen", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
             ("n_sat", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
@@ -162,21 +161,18 @@ def createSmoothHOD(config: str) -> None:
             ("V_bin", float, Vbins.size),
             ("M_bins", float, Mbins.size),
             ("f_bins", float, fcut.size),
-        ],
-    )
+        ])
 
-    cat["n_halos"] = Nhalos
-    cat["n_cen"] = Ncen
-    cat["n_sat"] = Nsat
-    cat["n_hal_gaus"] = Nhal_g
-    cat["n_cen_gaus"] = Ncen_g
-    cat["n_sat_gaus"] = Nsat_g
-    cat["z_bins"] = zbins
-    cat["V_bin"] = Vbins
-    cat["M_bins"] = Mbins
-    cat["f_bins"] = fcut
-
-    fits.writeto(input.SDHOD_fname(), cat, overwrite=True)
+        cat["n_halos"] = Nhalos
+        cat["n_cen"] = Ncen
+        cat["n_sat"] = Nsat
+        cat["n_hal_gaus"] = Nhal_g
+        cat["n_cen_gaus"] = Ncen_g
+        cat["n_sat_gaus"] = Nsat_g
+        cat["z_bins"] = zbins
+        cat["V_bin"] = Vbins
+        cat["M_bins"] = Mbins
+        cat["f_bins"] = fcut
 
     print("# done!")
 
@@ -217,7 +213,8 @@ def createSDHOD_Catalog(config: str) -> None:
     np.random.seed(seed=input.SEED_hod)
 
     print("# Reading the HOD table {}...".format(input.SDHOD_fname()))
-    hodtable = fits.getdata(input.SDHOD_fname())
+    with DefaultCatalogRead(input.SDHOD_fname()) as in_file:
+        hodtable = in_file["sdhod"]
 
     print("# Reading the halo catalog from {}...".format(input.master_fname()))
     store = zarr.open_group(input.master_fname(), mode="r")
