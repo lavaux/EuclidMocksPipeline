@@ -52,7 +52,7 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
             hdul.append(fits.BinTableHDU(data=self.arrays[array_name]))
             primary_hdu.header.append((f"TN{table_id}", array_name))
 
-        basepath,_=os.path.split(self.fname)
+        basepath, _ = os.path.split(self.fname)
         if not os.path.exists(basepath):
             os.makedirs(basepath)
 
