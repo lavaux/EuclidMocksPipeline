@@ -3,6 +3,7 @@ from astropy.io import fits
 from contextlib import AbstractContextManager
 import numpy as np
 import numpy.typing as npt
+import os
 
 
 class AbstractCatalogWrite(ABC):
