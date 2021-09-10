@@ -4,6 +4,7 @@
 ################################################################################
 from . import register_tool
 from euclid_obssys.config import readConfig
+from euclid_obssys.disk import DefaultCatalogWrite
 
 @register_tool
 def extractGalaxyCatalogFromMaster(config: str):
@@ -18,7 +19,6 @@ def extractGalaxyCatalogFromMaster(config: str):
     """
     from astropy.io import fits
     import numpy as np
-    import zarr
 
     input = readConfig(config)
 
@@ -30,7 +30,7 @@ def extractGalaxyCatalogFromMaster(config: str):
     print(f"# loading catalog {input.master_fname()}...")
 
     # input raw catalog
-    cat = zarr.open_group(input.master_fname(), mode="r")["catalog"]
+    cat = DefaultCatalogRead(input.master_fname())["catalog"]
 
     print("# selecting galaxies...")
 
@@ -90,8 +90,7 @@ def extractGalaxyCatalogFromMaster(config: str):
     fname = input.flagcat_fname()
 
     print(f"# writing file {fname}")
-    out = zarr.open_group(fname, mode="w")
-    out["catalog"] = extract
-    # fits.writeto(fname, extract, overwrite=True)
+    out = DefaultCatalogWrite(fname)
+    fname.set_array("catalog", extract)
 
     print("# done!")

@@ -1,19 +1,35 @@
-from  abc import ABC, abstractmethod
+from abc import ABC, abstractmethod
 from astropy.io import fits
 from contextlib import AbstractContextManager
 import numpy as np
 import numpy.typing as npt
 
-class CatalogWrite(ABC):
+
+class AbstractCatalogWrite(ABC):
     @abstractmethod
     def new_array(self, name: str, shape: int, dtype) -> npt.ArrayLike:
         raise NotImplementedError()
 
     @abstractmethod
-    def set_array(self, name:str, array: npt.ArrayLike) -> None:
+    def set_array(self, name: str, array: npt.ArrayLike) -> None:
         raise NotImplementedError()
 
-class CatalogFitsWrite(CatalogWrite, AbstractContextManager):
+
+class AbstractCatalogRead(ABC):
+    @abstractmethod
+    def get_tag(self, name: str) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_array(self, name: str) -> npt.ArrayLike:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __getitem__(self, name: str) -> npt.ArrayLike:
+        raise NotImplementedError()
+
+
+class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
     def __init__(self, fname: str):
         self.fname = fname
         self.arrays = {}
@@ -27,10 +43,10 @@ class CatalogFitsWrite(CatalogWrite, AbstractContextManager):
         for tag in self.tags.keys():
             primary_hdu.header.append((tag, self.tags[tag]))
 
-        primary_hdu.header.append(("OBSSYS","1"))
+        primary_hdu.header.append(("OBSSYS", "1"))
 
         hdul = fits.HDUList([primary_hdu])
-        
+
         table_id = 1
         for array_name in self.arrays.keys():
             hdul.append(fits.BinTableHDU(data=self.arrays[array_name]))
@@ -45,7 +61,7 @@ class CatalogFitsWrite(CatalogWrite, AbstractContextManager):
         self.arrays[name] = a
         return a
 
-    def set_array(self, name:str, array: npt.ArrayLike) -> None:
+    def set_array(self, name: str, array: npt.ArrayLike) -> None:
         assert self.exited == False
         self.arrays[name] = array
 
@@ -53,7 +69,7 @@ class CatalogFitsWrite(CatalogWrite, AbstractContextManager):
         self.tags[tagname] = tagdata
 
 
-class CatalogFitsRead:
+class CatalogFitsRead(AbstractCatalogRead, AbstractContextManager):
     def __init__(self, basepath: str):
         self.basepath = basepath
         self.arrays = None
@@ -61,16 +77,16 @@ class CatalogFitsRead:
     def __enter__(self):
         self.file = fits.open(self.basepath)
         self.header = self.file[0].header
-        if 'OBSSYS'  in self.header and self.header['OBSSYS'] == '1':
-            self.arrays={}
-            for i in range(1,len(self.file)):
-                self.arrays[self.header[f'TN{i}']] = i
+        if "OBSSYS" in self.header and self.header["OBSSYS"] == "1":
+            self.arrays = {}
+            for i in range(1, len(self.file)):
+                self.arrays[self.header[f"TN{i}"]] = i
         return self
 
-    def get_tag(self, name:str) -> str:
+    def get_tag(self, name: str) -> str:
         return self.header[name]
 
-    def get_array(self, name:str) -> npt.ArrayLike:
+    def get_array(self, name: str) -> npt.ArrayLike:
         if not self.arrays is None:
             return self.file[self.arrays[name]].data[:]
         else:
@@ -82,3 +98,7 @@ class CatalogFitsRead:
 
     def __getitem__(self, name: str) -> npt.ArrayLike:
         return self.get_array(name)
+
+
+DefaultCatalogWrite = CatalogFitsWrite
+DefaultCatalogRead = CatalogFitsRead
