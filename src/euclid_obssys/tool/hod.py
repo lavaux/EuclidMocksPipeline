@@ -202,6 +202,7 @@ def createSDHOD_Catalog(config: str) -> None:
     from scipy.stats import poisson
     import healpy as hp
     import numpy as np
+    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
 
     input = readConfig(config)
 
