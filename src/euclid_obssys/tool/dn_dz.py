@@ -19,9 +19,9 @@ def dN_dZ(config: str) -> None:
     """
     import numpy as np
     from os import path
-    from astropy.io import fits
     import healpy as hp
     from scipy.ndimage import gaussian_filter1d
+    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
 
     print(f"# Running dndz.py with {config}")
 
@@ -34,7 +34,8 @@ def dN_dZ(config: str) -> None:
         print("ERROR: galaxy catalog {} does not exist".format(fname))
         return -1
 
-    cat = fits.getdata(fname)
+    with DefaultCatalogRead(fname) as store:
+        cat = store["hod_cat"]
 
     # loads the survey footprint in equatorial coordinates
     footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
@@ -83,36 +84,36 @@ def dN_dZ(config: str) -> None:
     fname = input.dndz_fname()
     print("# Writing results on file {}...".format(fname))
 
-    dndz = np.empty(
-        Ngal.size,
-        dtype=[
-            ("N_gal", int),
-            ("N_gal_gaus", np.float),
-            ("N_cen", int),
-            ("N_cen_gaus", np.float),
-            ("z_center", np.float),
-            ("z_lower", np.float),
-            ("z_upper", np.float),
-            ("bin_center", np.float),
-            ("bin_lower", np.float),
-            ("bin_upper", np.float),
-            ("bin_volume", np.float),
-        ],
-    )
+    with DefaultCatalogWrite(fname) as store:
+        dndz = store.new_array(
+            "dn_dz",
+            shape=(Ngal.size,),
+            dtype=[
+                ("N_gal", int),
+                ("N_gal_gaus", np.float),
+                ("N_cen", int),
+                ("N_cen_gaus", np.float),
+                ("z_center", np.float),
+                ("z_lower", np.float),
+                ("z_upper", np.float),
+                ("bin_center", np.float),
+                ("bin_lower", np.float),
+                ("bin_upper", np.float),
+                ("bin_volume", np.float),
+            ],
+        )
 
-    dndz["N_gal"] = Ngal
-    dndz["N_cen"] = Ncen
-    dndz["bin_center"] = bin_center
-    dndz["bin_lower"] = bin_edges[:-1]
-    dndz["bin_upper"] = bin_edges[1:]
-    dndz["bin_volume"] = bin_volume
-    dndz["z_center"] = (ztab[1:] + ztab[:-1]) / 2
-    dndz["z_lower"] = ztab[:-1]
-    dndz["z_upper"] = ztab[1:]
+        dndz["N_gal"] = Ngal
+        dndz["N_cen"] = Ncen
+        dndz["bin_center"] = bin_center
+        dndz["bin_lower"] = bin_edges[:-1]
+        dndz["bin_upper"] = bin_edges[1:]
+        dndz["bin_volume"] = bin_volume
+        dndz["z_center"] = (ztab[1:] + ztab[:-1]) / 2
+        dndz["z_lower"] = ztab[:-1]
+        dndz["z_upper"] = ztab[1:]
 
-    dndz["N_gal_gaus"] = gaussian_filter1d(Ngal, input.smoothing_length)
-    dndz["N_cen_gaus"] = gaussian_filter1d(Ncen, input.smoothing_length)
-
-    fits.writeto(fname, dndz, overwrite=True)
+        dndz["N_gal_gaus"] = gaussian_filter1d(Ngal, input.smoothing_length)
+        dndz["N_cen_gaus"] = gaussian_filter1d(Ncen, input.smoothing_length)
 
     print("# done!")
