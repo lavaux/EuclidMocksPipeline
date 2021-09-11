@@ -150,18 +150,22 @@ def createSmoothHOD(config: str) -> None:
 
     with DefaultCatalogWrite(input.SDHOD_fname()) as out_file:
 
-        cat =out_file.new_array("sdhod", shape=(1,),dtype=[
-            ("n_halos", float, (zbins.size - 1, Mbins.size - 1)),
-            ("n_cen", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
-            ("n_sat", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
-            ("n_hal_gaus", float, (zbins.size - 1, Mbins.size - 1)),
-            ("n_cen_gaus", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
-            ("n_sat_gaus", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
-            ("z_bins", float, zbins.size),
-            ("V_bin", float, Vbins.size),
-            ("M_bins", float, Mbins.size),
-            ("f_bins", float, fcut.size),
-        ])
+        cat = out_file.new_array(
+            "sdhod",
+            shape=(1,),
+            dtype=[
+                ("n_halos", float, (zbins.size - 1, Mbins.size - 1)),
+                ("n_cen", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
+                ("n_sat", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
+                ("n_hal_gaus", float, (zbins.size - 1, Mbins.size - 1)),
+                ("n_cen_gaus", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
+                ("n_sat_gaus", float, (fcut.size, zbins.size - 1, Mbins.size - 1)),
+                ("z_bins", float, zbins.size),
+                ("V_bin", float, Vbins.size),
+                ("M_bins", float, Mbins.size),
+                ("f_bins", float, fcut.size),
+            ],
+        )
 
         cat["n_halos"] = Nhalos
         cat["n_cen"] = Ncen
@@ -217,21 +221,21 @@ def createSDHOD_Catalog(config: str) -> None:
         hodtable = in_file["sdhod"]
 
     print("# Reading the halo catalog from {}...".format(input.master_fname()))
-    store = zarr.open_group(input.master_fname(), mode="r")
-    rawcat = store["catalog"]
+    with DefaultCatalogRead(input.master_fname()) as store:
+        rawcat = store["catalog"]
 
-    c_kind = rawcat["kind"]
-    c_z = rawcat["true_redshift_gal"]
-    c_logm = rawcat["halo_lm"]
-    c_ra_gal = rawcat["ra_gal"]
-    c_dec_gal = rawcat["dec_gal"]
-    c_x_gal = rawcat["x_gal"]
-    c_y_gal = rawcat["y_gal"]
-    c_z_gal = rawcat["z_gal"]
-    c_vrad_gal = rawcat["vrad_gal"]
-    c_halo_id = rawcat["halo_id"]
+        c_kind = rawcat["kind"]
+        c_z = rawcat["true_redshift_gal"]
+        c_logm = rawcat["halo_lm"]
+        c_ra_gal = rawcat["ra_gal"]
+        c_dec_gal = rawcat["dec_gal"]
+        c_x_gal = rawcat["x_gal"]
+        c_y_gal = rawcat["y_gal"]
+        c_z_gal = rawcat["z_gal"]
+        c_vrad_gal = rawcat["vrad_gal"]
+        c_halo_id = rawcat["halo_id"]
 
-    del rawcat
+        del rawcat
 
     print("# Filtering the catalog for main halos...")
     filt = c_kind == 0
@@ -424,41 +428,44 @@ def createSDHOD_Catalog(config: str) -> None:
         shuffled_log10f[ff] = extract
 
     print("# Saving the catalog to file {}".format(input.hodcat_fname()))
-    catalog = np.empty(
-        Ngal,
-        dtype=[
-            ("x_gal", float),
-            ("y_gal", float),
-            ("z_gal", float),
-            ("ra_gal", float),
-            ("dec_gal", float),
-            ("kind", int),
-            ("true_redshift_gal", float),
-            ("observed_redshift_gal", float),
-            ("halo_lm", float),
-            ("id", int),
-            ("halo_id", int),
-            (input.flux_key, float),
-            ("sh_" + input.flux_key, float),
-        ],
-    )
+    with DefaultCatalogWrite(input.hodcat_fname()) as output:
+        catalog = output.new_array(
+            "hodcat",
+            shape=(Ngal,),
+            dtype=[
+                ("x_gal", float),
+                ("y_gal", float),
+                ("z_gal", float),
+                ("ra_gal", float),
+                ("dec_gal", float),
+                ("kind", int),
+                ("true_redshift_gal", float),
+                ("observed_redshift_gal", float),
+                ("halo_lm", float),
+                ("id", int),
+                ("halo_id", int),
+                (input.flux_key, float),
+                ("sh_" + input.flux_key, float),
+            ],
+        )
 
-    catalog["x_gal"] = xgal
-    catalog["y_gal"] = ygal
-    catalog["z_gal"] = zgal
-    catalog["true_redshift_gal"] = true_zgal
-    catalog["observed_redshift_gal"] = obs_zgal
-    catalog["ra_gal"] = np.arctan2(ygal, xgal) * 180.0 / np.pi
-    catalog["dec_gal"] = (
-        90.0
-        - np.arccos(zgal / (np.sqrt(xgal ** 2 + ygal ** 2 + zgal ** 2))) * 180.0 / np.pi
-    )
-    catalog["halo_lm"] = np.log10(halo_m)
-    catalog["kind"] = kind
-    catalog[input.flux_key] = log10f
-    catalog["sh_" + input.flux_key] = shuffled_log10f
-    catalog["id"] = cid
-    catalog["halo_id"] = haloid
+        catalog["x_gal"] = xgal
+        catalog["y_gal"] = ygal
+        catalog["z_gal"] = zgal
+        catalog["true_redshift_gal"] = true_zgal
+        catalog["observed_redshift_gal"] = obs_zgal
+        catalog["ra_gal"] = np.arctan2(ygal, xgal) * 180.0 / np.pi
+        catalog["dec_gal"] = (
+            90.0
+            - np.arccos(zgal / (np.sqrt(xgal ** 2 + ygal ** 2 + zgal ** 2)))
+            * 180.0
+            / np.pi
+        )
+        catalog["halo_lm"] = np.log10(halo_m)
+        catalog["kind"] = kind
+        catalog[input.flux_key] = log10f
+        catalog["sh_" + input.flux_key] = shuffled_log10f
+        catalog["id"] = cid
+        catalog["halo_id"] = haloid
 
-    fits.writeto(input.hodcat_fname(), catalog, overwrite=True)
     print("# !!DONE!!")
