@@ -18,7 +18,7 @@ def createRandom(config: str) -> None:
     Args:
         config (str): Pipeline config file
     """
-    from astropy.io import fits
+    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
     import healpy as hp
     import numpy as np
 
@@ -48,10 +48,11 @@ def createRandom(config: str) -> None:
     )
 
     print(f"# loading data catalog {input.galcat_fname()}...")
-    datacat = fits.getdata(input.galcat_fname())
-    data_redshift = datacat[input.redshift_key]
-    data_flux = datacat[input.my_flux_key]
-    del datacat
+    with DefaultCatalogRead(input.galcat_fname()) as store:
+        datacat = store["catalog"]
+        data_redshift = datacat[input.redshift_key]
+        data_flux = datacat[input.my_flux_key]
+        del datacat
 
     Ngal = data_redshift.size
     Nrandom = np.int(input.alpha * Ngal)
@@ -60,64 +61,71 @@ def createRandom(config: str) -> None:
     Nbunch = Nrandom // 10
 
     Nstored = 0
-    ra_gal = np.empty(Nrandom, dtype=float)
-    dec_gal = np.empty(Nrandom, dtype=float)
 
-    while Nstored < Nrandom:
-        randra = np.random.uniform(phmin, phmax, Nbunch)
-        randdec = np.arccos(np.random.uniform(np.cos(thmin), np.cos(thmax), Nbunch))
-
-        pix = hp.ang2pix(footprint_res, randdec, randra)
-
-        select = footprint[pix]
-        Nselect = select.sum()
-        Nup2now = Nstored + Nselect
-        if Nup2now > Nrandom:
-            Nup2now = Nrandom
-            Nselect = Nrandom - Nstored
-        print(
-            "    selected %d random galaxies out of %d, total: %d"
-            % (Nselect, Nbunch, Nup2now)
+    with DefaultCatalogWrite(input.random_fname()) as store:
+        catalog = store.new_array(
+            "catalog",
+            shape=(Nrandom,),
+            dtype=[
+                (input.redshift_key, float),
+                ("ra_gal", float),
+                ("dec_gal", float),
+                (input.my_flux_key, float),
+            ],
         )
-        ra_gal[Nstored:Nup2now] = randra[select][:Nselect]
-        dec_gal[Nstored:Nup2now] = np.pi / 2.0 - randdec[select][:Nselect]
 
-        Nstored = Nup2now
+        ra_gal = catalog["ra_gal"]
+        dec_gal = catalog["dec_gal"]
+        redshift = catalog[input.redshift_key]
+        flux = catalog[input.flux_key]
 
-    ra_gal *= 180.0 / np.pi
-    dec_gal *= 180.0 / np.pi
+        while Nstored < Nrandom:
+            randra = np.random.uniform(phmin, phmax, Nbunch)
+            randdec = np.arccos(np.random.uniform(np.cos(thmin), np.cos(thmax), Nbunch))
 
-    print("# Assigning redshifts and fluxes...")
-    Nbunch = Nrandom // 10
-    Nstored = 0
-    redshift = np.empty(Nrandom, dtype=float)
-    flux = np.empty(Nrandom, dtype=float)
-    while Nstored < Nrandom:
+            pix = hp.ang2pix(footprint_res, randdec, randra)
 
-        Nadd = Nbunch
-        if Nbunch + Nstored > Nrandom:
-            Nadd = Nrandom - Nstored
+            select = footprint[pix]
+            Nselect = select.sum()
+            Nup2now = Nstored + Nselect
+            if Nup2now > Nrandom:
+                Nup2now = Nrandom
+                Nselect = Nrandom - Nstored
+            print(
+                "    selected %d random galaxies out of %d, total: %d"
+                % (Nselect, Nbunch, Nup2now)
+            )
+            ra_gal[Nstored:Nup2now] = randra[select][:Nselect]
+            dec_gal[Nstored:Nup2now] = np.pi / 2.0 - randdec[select][:Nselect]
 
-        thesegals = np.random.uniform(0, Ngal, Nadd).astype(int)
-        # This is experimental...
-        if input.smooth_dndz_in_random:
-            redshift[Nstored : Nstored + Nadd] = data_redshift[
-                thesegals
-            ] * np.random.normal(1.0, input.deltazbin * input.smoothing_length, Nadd)
-        else:
-            redshift[Nstored : Nstored + Nadd] = data_redshift[thesegals]
-        flux[Nstored : Nstored + Nadd] = data_flux[thesegals]
-        Nstored += Nadd
-        print("    added %d random galaxies, total: %d" % (Nadd, Nstored))
+            Nstored = Nup2now
 
-    print("# Saving random to file {}...".format(input.random_fname()))
+        ra_gal *= 180.0 / np.pi
+        dec_gal *= 180.0 / np.pi
 
-    ################# Saving random galaxies and random redshift################
-    red = fits.Column(name=input.redshift_key, array=redshift, format="E")
-    ra = fits.Column(name="ra_gal", array=ra_gal, format="E")
-    dec = fits.Column(name="dec_gal", array=dec_gal, format="E")
-    flu = fits.Column(name=input.my_flux_key, array=flux, format="E")
-    tw = fits.BinTableHDU.from_columns([red, ra, dec, flu])
-    tw.writeto(input.random_fname(), overwrite=True)
+        print("# Assigning redshifts and fluxes...")
+        Nbunch = Nrandom // 10
+        Nstored = 0
+        while Nstored < Nrandom:
+
+            Nadd = Nbunch
+            if Nbunch + Nstored > Nrandom:
+                Nadd = Nrandom - Nstored
+
+            thesegals = np.random.uniform(0, Ngal, Nadd).astype(int)
+            # This is experimental...
+            if input.smooth_dndz_in_random:
+                redshift[Nstored : Nstored + Nadd] = data_redshift[
+                    thesegals
+                ] * np.random.normal(
+                    1.0, input.deltazbin * input.smoothing_length, Nadd
+                )
+            else:
+                redshift[Nstored : Nstored + Nadd] = data_redshift[thesegals]
+            flux[Nstored : Nstored + Nadd] = data_flux[thesegals]
+            Nstored += Nadd
+            print("    added %d random galaxies, total: %d" % (Nadd, Nstored))
+
+        print("# Saving random to file {}...".format(input.random_fname()))
 
     print("# DONE!")
