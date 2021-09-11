@@ -431,7 +431,7 @@ def createSDHOD_Catalog(config: str) -> None:
     print("# Saving the catalog to file {}".format(input.hodcat_fname()))
     with DefaultCatalogWrite(input.hodcat_fname()) as output:
         catalog = output.new_array(
-            "hodcat",
+            "catalog",
             shape=(Ngal,),
             dtype=[
                 ("x_gal", float),

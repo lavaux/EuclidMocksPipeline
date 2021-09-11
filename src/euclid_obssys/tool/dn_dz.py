@@ -35,7 +35,7 @@ def dN_dZ(config: str) -> None:
         return -1
 
     with DefaultCatalogRead(fname) as store:
-        cat = store["hod_cat"]
+        cat = store["catalog"]
 
     # loads the survey footprint in equatorial coordinates
     footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
