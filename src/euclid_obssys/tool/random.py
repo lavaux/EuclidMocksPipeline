@@ -1,5 +1,5 @@
 ################################################################################
-### Authors: Tiago Castro, Pierluigi Monaco                                  ###
+### Authors: Tiago Castro, Pierluigi Monaco, Guilhem Lavaux                  ###
 ###                                                                          ###
 ################################################################################
 from . import register_tool
