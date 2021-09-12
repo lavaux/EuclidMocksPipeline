@@ -7,6 +7,48 @@ from ..config import readConfig
 import sys
 
 
+
+def nside2norder(nside):
+    """
+    Give the HEALpix order for the given HEALpix nside parameter.
+
+    :param nside: nside of the healpy pixelization
+    :return: norder, norder of the healpy pixelization
+    """
+    import numpy as np
+
+    norder = np.log2(nside)
+    if not (norder.is_integer()):
+        raise ValueError('Wrong nside number (it is not 2**norder)')
+    return int(norder)
+
+
+
+def rand_vec_in_pix(nside, ipix, nest=False):
+    """
+    Draw vectors from a uniform distribution within a HEALpixel.
+
+    (Taken from astrotools: https://git.rwth-aachen.de/astro/astrotools/-/blob/master/astrotools/healpytools.py
+
+    :param nside: nside of the healpy pixelization
+    :param ipix: pixel number(s)
+    :param nest: set True in case you work with healpy's nested scheme
+    :return: vectors containing events from the pixel(s) specified in ipix
+    """
+    import healpy as hp
+    import numpy as np
+
+    if not nest:
+        ipix = hp.ring2nest(nside, ipix=ipix)
+
+    n_order = nside2norder(nside)
+    n_up = 29 - n_order
+    i_up = ipix * 4 ** n_up
+    i_up += np.random.randint(0, 4 ** n_up, size=np.size(ipix))
+
+    return np.asarray(hp.pix2vec(nside=2 ** 29, ipix=i_up, nest=True)).transpose()
+
+
 @register_tool
 def createRandom(config: str) -> None:
     """Creates a random for the galaxy catalog
@@ -78,25 +120,35 @@ def createRandom(config: str) -> None:
         dec_gal = catalog["dec_gal"]
         redshift = catalog[input.redshift_key]
         flux = catalog[input.flux_key]
+        print(f"footprint sum = {footprint.sum()}")
 
+        selected_pixels = np.where(footprint==1)[0]
         while Nstored < Nrandom:
-            randra = np.random.uniform(phmin, phmax, Nbunch)
-            randdec = np.arccos(np.random.uniform(np.cos(thmin), np.cos(thmax), Nbunch))
+            #pick a random pixel amont the footprint pixels that are 1
+            pix_list = selected_pixels[np.random.randint(low=0, high=selected_pixels.size, size=Nbunch)]
 
-            pix = hp.ang2pix(footprint_res, randdec, randra)
+            # Pick a random vector inside each pixel
+            randvec = rand_vec_in_pix(nside=footprint_res, ipix=pix_list, nest=False)
+            randdec,randra = hp.vec2ang(randvec)
 
-            select = footprint[pix]
-            Nselect = select.sum()
+            #randra = np.random.uniform(phmin, phmax, Nbunch)
+            #randdec = np.arccos(np.random.uniform(np.cos(thmin), np.cos(thmax), Nbunch))
+
+            #pix = hp.ang2pix(footprint_res, randdec, randra)
+
+            #select = footprint[pix]
+            #Nselect = select.sum()
+            Nselect = Nbunch
             Nup2now = Nstored + Nselect
             if Nup2now > Nrandom:
                 Nup2now = Nrandom
                 Nselect = Nrandom - Nstored
             print(
-                "    selected %d random galaxies out of %d, total: %d"
-                % (Nselect, Nbunch, Nup2now)
+                "    selected %d random galaxies out of %d, total: %d (target %d)"
+                % (Nselect, Nbunch, Nup2now, Nrandom)
             )
-            ra_gal[Nstored:Nup2now] = randra[select][:Nselect]
-            dec_gal[Nstored:Nup2now] = np.pi / 2.0 - randdec[select][:Nselect]
+            ra_gal[Nstored:Nup2now] = randra[:Nselect]
+            dec_gal[Nstored:Nup2now] = np.pi / 2.0 - randdec[:Nselect]
 
             Nstored = Nup2now
 
