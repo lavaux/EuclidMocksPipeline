@@ -5,6 +5,7 @@
 from . import register_tool
 from ..config import readConfig
 import sys
+from typing import Optional
 
 
 @register_tool
