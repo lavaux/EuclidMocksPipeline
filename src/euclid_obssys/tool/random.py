@@ -7,7 +7,6 @@ from ..config import readConfig
 import sys
 
 
-
 def nside2norder(nside):
     """
     Give the HEALpix order for the given HEALpix nside parameter.
@@ -19,9 +18,8 @@ def nside2norder(nside):
 
     norder = np.log2(nside)
     if not (norder.is_integer()):
-        raise ValueError('Wrong nside number (it is not 2**norder)')
+        raise ValueError("Wrong nside number (it is not 2**norder)")
     return int(norder)
-
 
 
 def rand_vec_in_pix(nside, ipix, nest=False):
@@ -50,7 +48,7 @@ def rand_vec_in_pix(nside, ipix, nest=False):
 
 
 @register_tool
-def createRandom(config: str) -> None:
+def createRandom(config: str, legacy_algorithm: bool = False) -> None:
     """Creates a random for the galaxy catalog
 
     The random catalog is created  with abundance alpha times the data catalog, alpha as
@@ -100,6 +98,7 @@ def createRandom(config: str) -> None:
     Nrandom = np.int(input.alpha * Ngal)
 
     print("# Starting to create {} random galaxies...".format(Nrandom))
+    print(f"# Using legacy algorithm = {legacy_algorithm}")
     Nbunch = Nrandom // 10
 
     Nstored = 0
@@ -114,6 +113,7 @@ def createRandom(config: str) -> None:
                 ("dec_gal", float),
                 (input.my_flux_key, float),
             ],
+            tags={"legacy": legacy_algorithm},
         )
 
         ra_gal = catalog["ra_gal"]
@@ -122,23 +122,32 @@ def createRandom(config: str) -> None:
         flux = catalog[input.flux_key]
         print(f"footprint sum = {footprint.sum()}")
 
-        selected_pixels = np.where(footprint==1)[0]
+        if not legacy_algorithm:
+            selected_pixels = np.where(footprint == 1)[0]
         while Nstored < Nrandom:
-            #pick a random pixel amont the footprint pixels that are 1
-            pix_list = selected_pixels[np.random.randint(low=0, high=selected_pixels.size, size=Nbunch)]
+            # pick a random pixel amont the footprint pixels that are 1
+            if not legacy_algorithm:
+                pix_list = selected_pixels[
+                    np.random.randint(low=0, high=selected_pixels.size, size=Nbunch)
+                ]
 
-            # Pick a random vector inside each pixel
-            randvec = rand_vec_in_pix(nside=footprint_res, ipix=pix_list, nest=False)
-            randdec,randra = hp.vec2ang(randvec)
+                # Pick a random vector inside each pixel
+                randvec = rand_vec_in_pix(
+                    nside=footprint_res, ipix=pix_list, nest=False
+                )
+                randdec, randra = hp.vec2ang(randvec)
+                Nselect = Nbunch
+            else:
+                randra = np.random.uniform(phmin, phmax, Nbunch)
+                randdec = np.arccos(
+                    np.random.uniform(np.cos(thmin), np.cos(thmax), Nbunch)
+                )
 
-            #randra = np.random.uniform(phmin, phmax, Nbunch)
-            #randdec = np.arccos(np.random.uniform(np.cos(thmin), np.cos(thmax), Nbunch))
+                pix = hp.ang2pix(footprint_res, randdec, randra)
 
-            #pix = hp.ang2pix(footprint_res, randdec, randra)
+                select = footprint[pix]
+                Nselect = select.sum()
 
-            #select = footprint[pix]
-            #Nselect = select.sum()
-            Nselect = Nbunch
             Nup2now = Nstored + Nselect
             if Nup2now > Nrandom:
                 Nup2now = Nrandom
