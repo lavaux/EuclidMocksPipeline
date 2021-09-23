@@ -256,7 +256,7 @@ def galcat_fname(tag=cat_type):
         return pincat_fname()
     else:
         print("ERROR in input.galcat_fname: unrecognised cat_type")
-        sys.exit(1)
+        raise ValueError()
 
 def galcat_kernel(tag=cat_type):
     return exclude_dir(galcat_fname(tag))[:-5]

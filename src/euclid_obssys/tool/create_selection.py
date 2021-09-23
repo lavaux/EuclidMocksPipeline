@@ -74,13 +74,13 @@ def createSelection(
             print("No selection specified for galaxy catalog, exiting")
             sys.exit(0)
         else:
-            sel_input_fname = "sel_input_{}".format(input.selection_data_tag)
+            sel_input_fname = "sel_input_{}.py".format(input.selection_data_tag)
     else:
         if input.selection_random_tag is None:
             print("No selection specified for random catalog, exiting")
             sys.exit(0)
         else:
-            sel_input_fname = "sel_input_{}".format(input.selection_random_tag)
+            sel_input_fname = "sel_input_{}.py".format(input.selection_random_tag)
 
         if input.apply_dataselection_to_random:
             print(
