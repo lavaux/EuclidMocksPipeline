@@ -5,6 +5,7 @@
 from . import register_tool
 from ..config import readConfig
 import sys
+from typing import Tuple
 from numpy.typing import *
 
 
@@ -48,8 +49,9 @@ def rand_vec_in_pix(nside, ipix, nest=False):
     return np.asarray(hp.pix2vec(nside=2 ** 29, ipix=i_up, nest=True)).transpose()
 
 
-def generate_random_simple(input: dict, redshift: ArrayLike, flux: ArrayLike) -> int:
+def generate_random_simple(input: dict) -> Tuple[ArrayLike,ArrayLike]:
     from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    import numpy as np
 
     fname = input.galcat_fname(input.pinocchio_first_run)
     print ("# loading data catalog {}...".format(fname))
@@ -91,9 +93,9 @@ def generate_random_simple(input: dict, redshift: ArrayLike, flux: ArrayLike) ->
         Nstored += Nadd
         print("    added %d random galaxies, total: %d"%(Nadd,Nstored))
 
-    return Nrandom
+    return redshift, flux
 
-def generate_random_pinocchio(input: dict, redshift: ArrayLike, flux: ArrayLike) -> int:
+def generate_random_pinocchio(input: dict) -> Tuple[ArrayLike, ArrayLike]:
     import numpy as np
     from ..disk import DefaultCatalogRead
 
@@ -136,7 +138,7 @@ def generate_random_pinocchio(input: dict, redshift: ArrayLike, flux: ArrayLike)
                     Nstored = Nrandom
                 print("    added %d random galaxies, total: %d"%(Nadd,Nstored))
     
-    return Nrandom
+    return redshift, flux
 
 @register_tool
 def createRandom(config: str, legacy_algorithm: bool = False) -> None:
@@ -195,16 +197,18 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
 
         ra_gal = catalog["ra_gal"]
         dec_gal = catalog["dec_gal"]
-        redshift = catalog[input.redshift_key]
-        flux = catalog[input.flux_key]
         print(f"footprint sum = {footprint.sum()}")
 
         print("# Assigning redshifts and fluxes...")
 
         if (input.cat_type is not 'pinocchio') | (input.pinocchio_last_run is None):
-            Nrandom=generate_random_simple(input, redshift, flux)
+            redshift,flux=generate_random_simple(input)
         else:
-            Nrandom=generate_random_pinocchio(input, redshift, flux)
+            redshift,flux=generate_random_pinocchio(input)
+
+        catalog[input.redshift_key] = redshift
+        catalog[input.flux_key] = flux
+        Nrandom = redshift.size
 
         print("# Starting to create {} random galaxies...".format(Nrandom))
         Nbunch = Nrandom // 10
