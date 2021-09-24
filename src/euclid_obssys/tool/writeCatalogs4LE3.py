@@ -177,7 +177,7 @@ def write_catalog_LE3(
 
 
 @register_tool
-def writeCatalog4LE3(config: str) -> None:
+def writeCatalogs4LE3(config: str) -> None:
     import numpy as np
     import sys
     import healpy as hp
