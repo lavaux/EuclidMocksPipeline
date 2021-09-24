@@ -180,6 +180,12 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
         % (thmin, thmax, phmin, phmax)
     )
 
+    print("# Assigning redshifts and fluxes...")
+    if (input.cat_type is not 'pinocchio') | (input.pinocchio_last_run is None):
+        redshift,flux=generate_random_simple(input)
+    else:
+        redshift,flux=generate_random_pinocchio(input)
+
     print("# Saving random to file {}...".format(input.random_fname()))
 
     with DefaultCatalogWrite(input.random_fname()) as store:
@@ -198,13 +204,6 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
         ra_gal = catalog["ra_gal"]
         dec_gal = catalog["dec_gal"]
         print(f"footprint sum = {footprint.sum()}")
-
-        print("# Assigning redshifts and fluxes...")
-
-        if (input.cat_type is not 'pinocchio') | (input.pinocchio_last_run is None):
-            redshift,flux=generate_random_simple(input)
-        else:
-            redshift,flux=generate_random_pinocchio(input)
 
         catalog[input.redshift_key] = redshift
         catalog[input.flux_key] = flux
