@@ -51,7 +51,7 @@ def createSelection(
 
     # check if data or random catalog is to be selected
     myrun = None
-    if use_data:
+    if not use_data:
         print("# Selection will be applied to the random catalog")
 
     if run_number is not None and input.cat_type != "pinocchio":
