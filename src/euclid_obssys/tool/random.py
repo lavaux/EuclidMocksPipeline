@@ -186,6 +186,7 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
     else:
         redshift,flux=generate_random_pinocchio(input)
 
+    Nrandom = redshift.size
     print("# Saving random to file {}...".format(input.random_fname()))
 
     with DefaultCatalogWrite(input.random_fname()) as store:
@@ -207,7 +208,6 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
 
         catalog[input.redshift_key] = redshift
         catalog[input.flux_key] = flux
-        Nrandom = redshift.size
 
         print("# Starting to create {} random galaxies...".format(Nrandom))
         Nbunch = Nrandom // 10
