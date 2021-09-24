@@ -10,6 +10,7 @@ from ..config import readConfig
 def visualizeHOD(config: str, ext: str = "png"):
     import numpy as np
     import matplotlib
+    import os
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -42,7 +43,7 @@ def visualizeHOD(config: str, ext: str = "png"):
     )
 
     with DefaultCatalogRead(input.SDHOD_fname()) as store:
-        sdhod = store["catalog"]
+        sdhod = store["sdhod"]
 
     ensurePath(os.path.join(input.outdir, "Plots"))
 

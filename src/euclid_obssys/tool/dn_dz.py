@@ -4,10 +4,10 @@
 ################################################################################
 from . import register_tool
 from ..config import readConfig
-
+from typing import Optional
 
 @register_tool
-def dN_dZ(config: str) -> None:
+def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
     """Compute the number of galaxies as a function of redshift.
 
     This is also separated into centrals and satellites,
@@ -27,7 +27,7 @@ def dN_dZ(config: str) -> None:
 
     input = readConfig(config)
 
-    fname = input.galcat_fname()
+    fname = input.galcat_fname(myrun)
     print(f"# loading catalog {fname}...")
 
     if not path.exists(fname):
@@ -65,23 +65,60 @@ def dN_dZ(config: str) -> None:
     )
     bin_center = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
-    # selection
-    if input.selection_data_tag is not None:
-        print("# loading selection {}...".format(input.selection_data_fname()))
-        mysel = fits.getdata(input.selection_data_fname())["SELECTION"]
-    else:
-        mysel = np.ones(len(cat), dtype=bool)
 
-    print("# Processing catalog...")
-
-    # Histogram
-
-    Ngal = np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]
-    isCen = cat["kind"][mysel] == 0
-    Ncen = np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]
+    if (input.cat_type is 'pinocchio') & (input.pinocchio_last_run is not None):
+    
+        Ngal=None
+    
+        nruns=input.pinocchio_last_run-input.pinocchio_first_run +1
+        for myrun in np.arange(input.pinocchio_first_run,input.pinocchio_last_run+1):
+   
+   
+           fname=input.galcat_fname(myrun)
+           print("# loading catalog {}...".format(fname))
+           
+           if not path.exists(fname):
+               print("ERROR: galaxy catalog {} does not exist".format(fname))
+               sys.exit(-1)
+   
+           with DefaultCatalogRead(fname) as store:
+             cat = store['catalog']
+   
+           # NB: no selection is applied to pinocchio mocks
+   
+           print("# Processing catalog...")
+   
+           # Histogram
+           isCen    = cat['kind']==0
+           if Ngal is None:
+               Ngal  = (np.histogram(cat[input.redshift_key], bins=ztab)[0]).astype(np.float64)
+               Ncen  = (np.histogram(cat[input.redshift_key][isCen], bins=ztab)[0]).astype(np.float64)
+           else:
+               Ngal += (np.histogram(cat[input.redshift_key], bins=ztab)[0]).astype(np.float64)
+               Ncen += (np.histogram(cat[input.redshift_key][isCen], bins=ztab)[0]).astype(np.float64)
+   
+        Ngal = (Ngal/float(nruns)).astype(float)
+        Ncen = (Ncen/float(nruns)).astype(float)
+    else: 
+   
+        # selection
+        if input.selection_data_tag is not None:
+            print("# loading selection {}...".format(input.selection_data_fname(myrun)))
+            with DefaultCatalogRead(input.selection_data_fname()) as store:
+               mysel=store["SELECTION"]["SELECTION"]
+        else:
+            mysel = np.ones(len(cat), dtype=bool)
+    
+        print("# Processing catalog...")
+    
+        # Histogram
+    
+        Ngal = np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]
+        isCen = cat["kind"][mysel] == 0
+        Ncen = np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]
 
     ## Writes on file
-    fname = input.dndz_fname()
+    fname = input.dndz_fname(r1=input.pinocchio_first_run,r2=input.pinocchio_last_run)
     print("# Writing results on file {}...".format(fname))
 
     with DefaultCatalogWrite(fname) as store:

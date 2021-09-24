@@ -1,5 +1,5 @@
 from . import get_tools
-from . import angular_map, visualizeHOD
+from . import angular_map, visualizeHOD, dn_dz
 
 
 class EuclidViewTool(object):

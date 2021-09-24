@@ -9,11 +9,14 @@ from ..config import readConfig
 @register_view_tool
 def dn_dz(config: str):
     from astropy.io import fits
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
     import numpy as np
     import healpy as hp
     import sys
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
 
     input = readConfig(config)
 
@@ -39,7 +42,8 @@ def dn_dz(config: str):
 
     fname = input.dndz_fname(input.pinocchio_first_run, input.pinocchio_last_run)
     print("Reading dndz from file {}".format(fname))
-    dndz = fits.getdata(fname)
+    with DefaultCatalogRead(fname) as store:
+      dndz = store['dn_dz']
 
     fig = plt.figure(figsize=(8, 8))
     plt.suptitle(input.exclude_dir(fname))
