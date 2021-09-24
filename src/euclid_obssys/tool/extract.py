@@ -41,9 +41,7 @@ def extractGalaxyCatalogFromMaster(config: str):
 
     print(f"# extracting {Nextract} galaxies")
 
-    extract = np.empty(
-        Nextract,
-        dtype=[
+    extract_dtype=[
             ("x_gal", float),
             ("y_gal", float),
             ("z_gal", float),
@@ -55,9 +53,14 @@ def extractGalaxyCatalogFromMaster(config: str):
             ("halo_lm", float),
             ("galaxy_id", int),
             ("halo_id", int),
-            (input["flux_key"], float),
             ("sh_" + input["flux_key"], float),
-        ],
+        ]
+        
+    if input.flux_key != "halo_lm":
+        extract_dtype.append((input["flux_key"], float))
+
+    extract = np.empty(
+        Nextract,dtype=extract_dtype
     )
 
     for field in extract.dtype.names:
