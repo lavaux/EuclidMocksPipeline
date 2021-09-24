@@ -9,7 +9,15 @@ from typing import Optional
 
 
 def write_catalog_LE3(
-    input: dict, fname: str, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_EQUATORIAL"
+    input: dict,
+    fname: str,
+    x,
+    y,
+    z,
+    w,
+    type="DATA",
+    format="fits",
+    coord="PSEUDO_EQUATORIAL",
 ):
     import numpy as np
     from astropy.io import fits as astrofits
@@ -207,7 +215,7 @@ def writeCatalogs4LE3(config: str) -> None:
     if input.WriteLE3Random:
         print(f"# reading random catalog {input.random_fname()}...")
         with DefaultCatalogRead(input.random_fname()) as store:
-            randomcat = store['catalog']
+            randomcat = store["catalog"]
 
         if (not input.apply_dataselection_to_random) & (
             input.selection_random_tag is not None

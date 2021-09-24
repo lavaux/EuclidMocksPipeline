@@ -48,7 +48,7 @@ def angular_map(
     if selection is not None:
         print(f"Reading selection {selection}...")
         with DefaultCatalogRead(selection) as store:
-            mysel = store['SELECTION']['SELECTION']
+            mysel = store["SELECTION"]["SELECTION"]
     else:
         mysel = np.ones(len(cat), dtype=bool)
 
@@ -67,7 +67,7 @@ def angular_map(
         map[p] += 1
 
     fig = plt.figure(num=1)
-    hp.mollview(map,rot=[0,0,0],title=fname,fig=1)
+    hp.mollview(map, rot=[0, 0, 0], title=fname, fig=1)
     if output is not None:
         fig.savefig(output)
     else:
