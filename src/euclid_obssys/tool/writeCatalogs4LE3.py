@@ -9,7 +9,7 @@ from typing import Optional
 
 
 def write_catalog_LE3(
-    fname: str, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_EQUATORIAL"
+    input: dict, fname: str, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_EQUATORIAL"
 ):
     import numpy as np
     from astropy.io import fits as astrofits
@@ -206,7 +206,8 @@ def writeCatalogs4LE3(config: str) -> None:
     # you can skip the writing of the random
     if input.WriteLE3Random:
         print(f"# reading random catalog {input.random_fname()}...")
-        randomcat = astrofits.getdata(input.random_fname())
+        with DefaultCatalogRead(input.random_fname()) as store:
+            randomcat = store['catalog']
 
         if (not input.apply_dataselection_to_random) & (
             input.selection_random_tag is not None
@@ -238,6 +239,7 @@ def writeCatalogs4LE3(config: str) -> None:
 
             print("# writing random file {}".format(input.LE3_random_fname(zmin, zmax)))
             write_catalog_LE3(
+                input,
                 input.LE3_random_fname(zmin, zmax),
                 randomcat["ra_gal"][sel],
                 randomcat["dec_gal"][sel],
@@ -282,7 +284,8 @@ def writeCatalogs4LE3(config: str) -> None:
 
             fname = input.LE3_data_fname(zmin, zmax, myrun)
             print("# writing data file {}".format(fname))
-            write_catalog(
+            write_catalog_LE3(
+                input,
                 fname,
                 cat["ra_gal"][mysel],
                 cat["dec_gal"][mysel],

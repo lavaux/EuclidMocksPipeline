@@ -53,6 +53,7 @@ selection_random_tag = SELRAND #'MWext'
 SEED_random=12345
 alpha=50
 smooth_dndz_in_random = False   # if True the random follows the smoothed dn/dz
+apply_dataselection_to_random = False
 
 # MEASUREMENT SECTION
 # Redshift Space Distorsions - if True use observed_redshift_gal as redshift, 
@@ -92,6 +93,20 @@ ngrid = 1024
 ###############################################
 # What is written below should not be changed #
 ###############################################
+
+# applying data selection to the construction of random
+if (apply_dataselection_to_random) & (selection_data_tag is not None):
+    selection_random_tag = 'DS'+selection_data_tag
+
+
+# sets all pinocchio variables to None if pinocchio runs are not used
+if cat_type is not 'pinocchio':
+    pinocchio_repo=None
+    pinocchio_kernel=None
+    pinocchio_rotator=None
+    pinocchio_first_run=None
+    pinocchio_last_run=None
+    MASS_SHIFT = None
 
 
 # this is for reading a footprint file
