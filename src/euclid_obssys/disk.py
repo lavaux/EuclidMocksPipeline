@@ -111,6 +111,8 @@ class CatalogFitsRead(AbstractCatalogRead, AbstractContextManager):
             self.arrays = {}
             for i in range(1, len(self.file)):
                 self.arrays[self.header[f"TN{i}"]] = i
+        import pprint
+        pprint.pprint(self.arrays)
         return self
 
     def get_tag(self, name: str) -> object:
