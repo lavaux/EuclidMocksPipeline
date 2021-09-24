@@ -85,7 +85,7 @@ def numbercounts(config: str):
         with DefaultCatalogWrite(fname) as store:
             flux_counts = store.new_array(
                 "NUMBER_COUNT",
-                (Ngal,),
+                shape=(Ngal.size,),
                 dtype=[
                     ("LF", np.float),
                     ("LF_cen", np.float),
