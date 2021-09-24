@@ -6,7 +6,14 @@ from . import register_view_tool
 
 
 @register_view_tool
-def angular_map(catalog: str, selection: str, z1: float, z2: float, Nside: int = 256, output: str = None)->None:
+def angular_map(
+    catalog: str,
+    selection: str,
+    z1: float,
+    z2: float,
+    Nside: int = 256,
+    output: str = None,
+) -> None:
     """[summary]
 
     Args:
@@ -26,43 +33,44 @@ def angular_map(catalog: str, selection: str, z1: float, z2: float, Nside: int =
 
     print("# Running angular_map.py")
 
-    Nside=256
+    Nside = 256
 
     fname = catalog
-    if selection == 'None':
+    if selection == "None":
         selection = None
 
-    print("Plotting map of catalog {} in z=[{},{}]".format(fname,z1,z2))
+    print("Plotting map of catalog {} in z=[{},{}]".format(fname, z1, z2))
 
     print("Reading catalog...")
     with DefaultCatalogRead(fname) as store:
-        cat = store['catalog']
+        cat = store["catalog"]
 
     if selection is not None:
         print("Reading selection...")
         with DefaultCatalogRead(fname) as store:
-            myself = store['SELECTION']['SELECTION']
+            myself = store["SELECTION"]["SELECTION"]
     else:
-        mysel = np.ones(len(cat),dtype=bool)
+        mysel = np.ones(len(cat), dtype=bool)
 
     print("Filtering catalog...")
-    filter = (cat['true_redshift_gal']>=z1) & (cat['true_redshift_gal']<z2) & mysel
+    filter = (cat["true_redshift_gal"] >= z1) & (cat["true_redshift_gal"] < z2) & mysel
 
     print("Finding pixels for {} galaxies...".format(filter.sum()))
-    conv = np.pi/180.
-    pix  = hp.ang2pix(Nside, np.pi/2. - cat['dec_gal'][filter]*conv, cat['ra_gal'][filter]*conv)
+    conv = np.pi / 180.0
+    pix = hp.ang2pix(
+        Nside, np.pi / 2.0 - cat["dec_gal"][filter] * conv, cat["ra_gal"][filter] * conv
+    )
 
     print("Constructing map...")
     map = np.zeros((hp.nside2npix(Nside)), dtype=int)
     for p in pix:
-        map[p]+=1
+        map[p] += 1
 
     fig = plt.figure(fig=1)
-    hp.mollview(map,rot=[0,0,0],title=fname,fig=1)
+    hp.mollview(map, rot=[0, 0, 0], title=fname, fig=1)
     if output is not None:
         fig.savefig(output)
     else:
         plt.show()
 
     print("Done!")
-

@@ -1,7 +1,5 @@
 from . import get_tools
-from . import (
-    angular_map
-)
+from . import angular_map
 
 
 class EuclidViewTool(object):

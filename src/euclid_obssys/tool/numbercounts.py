@@ -18,6 +18,7 @@ def numbercounts(config: str):
     import healpy as hp
     import sys
     from os import path
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
 
     print("# Running numbercounts.py with {}".format(config))
     input = readConfig(config)
@@ -31,7 +32,8 @@ def numbercounts(config: str):
         print("ERROR: galaxy catalog {} does not exist".format(fname))
         sys.exit(-1)
 
-    cat = fits.getdata(fname)
+    with DefaultCatalogRead(fname) as store:
+        cat = store["catalog"]
 
     # loads the survey footprint in equatorial coordinates
     footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
@@ -40,7 +42,8 @@ def numbercounts(config: str):
     # selection
     if input.selection_data_tag is not None:
         print("# loading selection {}...".format(input.selection_data_fname()))
-        selection = fits.getdata(input.selection_data_fname())["SELECTION"]
+        with DefaultCatalogRead(input.selection_data_fname()) as store:
+            selection = store["SELECTION"]["SELECTION"]
     else:
         selection = np.ones(len(cat), dtype=bool)
 
@@ -79,24 +82,25 @@ def numbercounts(config: str):
         fname = input.numbercounts_fname(z1, z2)
         print("# Writing results in file {}".format(fname))
 
-        flux_counts = np.empty(
-            Ngal.size,
-            dtype=[
-                ("LF", np.float),
-                ("LF_cen", np.float),
-                ("LF_sat", np.float),
-                ("f_center", np.float),
-                ("f_lower", np.float),
-                ("f_upper", np.float),
-            ],
-        )
-        flux_counts["LF"] = LF
-        flux_counts["LF_cen"] = LF_cen
-        flux_counts["LF_sat"] = LF_sat
-        flux_counts["f_center"] = xflux
-        flux_counts["f_lower"] = 10.0 ** flux_bins[:-1]
-        flux_counts["f_upper"] = 10.0 ** flux_bins[1:]
+        with DefaultCatalogWrite(fname) as store:
+            flux_counts = store.new_array(
+                "NUMBER_COUNT",
+                (Ngal,),
+                dtype=[
+                    ("LF", np.float),
+                    ("LF_cen", np.float),
+                    ("LF_sat", np.float),
+                    ("f_center", np.float),
+                    ("f_lower", np.float),
+                    ("f_upper", np.float),
+                ],
+            )
 
-        fits.writeto(fname, flux_counts, overwrite=True)
+            flux_counts["LF"] = LF
+            flux_counts["LF_cen"] = LF_cen
+            flux_counts["LF_sat"] = LF_sat
+            flux_counts["f_center"] = xflux
+            flux_counts["f_lower"] = 10.0 ** flux_bins[:-1]
+            flux_counts["f_upper"] = 10.0 ** flux_bins[1:]
 
     print("# done!")
