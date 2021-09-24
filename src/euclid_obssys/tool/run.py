@@ -12,6 +12,7 @@ from . import (
     indices_for_sats,
     apply_footprint,
     create_selection,
+    writeCatalogs4LE3,
 )
 
 
