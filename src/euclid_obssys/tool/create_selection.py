@@ -106,12 +106,15 @@ def createSelection(
             sys.exit(1)
 
     # load galaxy catalog
+    if myrun is None:
+        myrun = input.cat_type
+
     if use_data:
         cat_fname = input.galcat_fname(myrun)
-        print(f"Opening galaxy catalog {fname}...")
+        print(f"Opening galaxy catalog {cat_fname}...")
     else:
         cat_fname = input.random_fname()
-        print(f"Opening random catalog {fname}...")
+        print(f"Opening random catalog {cat_fname}...")
 
     with DefaultCatalogRead(cat_fname) as store:
         cat = store["catalog"]
@@ -131,7 +134,7 @@ def createSelection(
                 input.outdir + sel_input.lookup_table_fname
             )
         )
-        lut = fits.getdata(input.outdir + sel_input.lookup_table_fname)
+        lut = fits.getdata(os.path.join(input.outdir, sel_input.lookup_table_fname))
 
         # THESE SHOULD BE IN THE HEADER...
         nred = 14
@@ -177,7 +180,7 @@ def createSelection(
 
             print("# applying extinction in lookup table...")
             conv = np.pi / 180.0
-            fname = input.outdir + sel_input.extinctionmap_fname
+            fname = os.path.join(input.outdir, sel_input.extinctionmap_fname)
             print("# loading reddening map {}...".format(fname))
             reddening = hp.read_map(fname, field=sel_input.extinctionmap_field)
             if sel_input.extinctionmap_res != hp.npix2nside(reddening.size):
@@ -334,15 +337,15 @@ def createSelection(
             selection &= cat["kind"] == 1
 
     if use_data:
-        fname = input.selection_data_fname(run=myrun)
+        fname = input.selection_data_fname()
     else:
         fname = input.selection_random_fname()
 
-    print("# Writing file {}...".format(fname))
+    print(f"# Writing file {fname}...")
 
-    tofits = np.empty(Ngal, dtype=[("SELECTION", bool)])
-    tofits["SELECTION"] = selection
+    with DefaultCatalogWrite(fname) as store:
 
-    fits.writeto(fname, tofits, overwrite=True)
+        tofits = store.new_array("SELECTION", (Ngal,), dtype=[("SELECTION", bool)])
+        tofits["SELECTION"] = selection
 
     print("# Done!")
