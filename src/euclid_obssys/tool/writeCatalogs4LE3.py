@@ -1,25 +1,20 @@
+
 ################################################################################
-### Authors: Tiago Castro, Pierluigi Monaco                                  ###
+### Authors: Tiago Castro, Pierluigi Monaco, Guilhem Lavaux                  ###
 ###                                                                          ###
 ################################################################################
-from astropy.io import fits as astrofits
-from fitsio import FITS, FITSHDR
-import numpy as np
+from . import register_tool
+from ..config import readConfig
 import sys
-import healpy as hp
-
-if len(sys.argv)<2:
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
-    sys.exit(0)
-try: 
-    input = __import__(sys.argv[1],  globals(), locals(), [], 0)
-except ModuleNotFoundError:
-    print("input file not found")
-    print("Usage: pyton {} [my input file]".format(sys.argv[0]))
-    sys.exit(0)
+from typing import Optional
 
 
-def write_catalog(fname, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_EQUATORIAL"):
+def write_catalog_LE3(fname: str, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_EQUATORIAL"):
+    import numpy as np
+    from astropy.io import fits as astrofits
+    # GL: Do we really need those???
+    from fitsio import FITS, FITSHDR
+
     if format=="txt":
         
         np.savetxt(fname, np.transpose( [x, y, z, w] ) )
@@ -32,32 +27,32 @@ def write_catalog(fname, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_E
         
         if coord=="PSEUDO_EQUATORIAL":
             columns = [['SOURCE_ID', -1, 'f8'],
-                       ['RA',         x, 'f8'],
-                       ['DEC',        y, 'f8'],
-                       ['REDSHIFT',   z, 'f8'],
-                       ['WEIGHT',    -1, 'f8'],
-                       ['DENSITY',    w, 'f8']]
+                    ['RA',         x, 'f8'],
+                    ['DEC',        y, 'f8'],
+                    ['REDSHIFT',   z, 'f8'],
+                    ['WEIGHT',    -1, 'f8'],
+                    ['DENSITY',    w, 'f8']]
         elif coord=="CARTESIAN":
             columns = [['SOURCE_ID', -1, 'f8'],
-                       ['COMOV_X',    x, 'f8'],
-                       ['COMOV_Y',    y, 'f8'],
-                       ['COMOV_Z',    z, 'f8'],
-                       ['WEIGHT',    -1, 'f8'],
-                       ['DENSITY',    w, 'f8']]
- 
+                    ['COMOV_X',    x, 'f8'],
+                    ['COMOV_Y',    y, 'f8'],
+                    ['COMOV_Z',    z, 'f8'],
+                    ['WEIGHT',    -1, 'f8'],
+                    ['DENSITY',    w, 'f8']]
+
         header_keywords = {"TELESCOP": "EUCLID",
-                           "INSTRUME": "LE3GC-MOCKS",
-                           "FILENAME": fname,
-                           "CAT_ID"  : "MOCK",
-                           "COORD"   : coord,
-                           "ANGLE"   : "DEGREES"}
+                        "INSTRUME": "LE3GC-MOCKS",
+                        "FILENAME": fname,
+                        "CAT_ID"  : "MOCK",
+                        "COORD"   : coord,
+                        "ANGLE"   : "DEGREES"}
 
         extension="CATALOG"
 
         xmlKeys = {"pf"    : "PK_LE3_GC_WindowMultipoles",
-                   "instr" : "LE3_GC_MOCKS",
-                   "id"    : "MOCK",
-                   "coord" : coord}
+                "instr" : "LE3_GC_MOCKS",
+                "id"    : "MOCK",
+                "coord" : coord}
 
         print("Preparing FITS structure")
         types = []
@@ -149,85 +144,99 @@ def write_catalog(fname, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_E
 ###################################################################################
 
 
-print("# Running writeCatalog4LE3.py with {}".format(sys.argv[1]))
+@register_tool
+def writeCatalog4LE3(config: str) -> None:
+    import numpy as np
+    import sys
+    import healpy as hp
+    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
 
-r1=input.pinocchio_first_run
-r2=input.pinocchio_last_run
-if input.cat_type is 'pinocchio':
-    n1=r1
-    if r2 is not None:
-        n2=r2
+    input = readConfig(config)
+
+
+    print(f"# Running writeCatalog4LE3.py with {config}")
+
+    r1=input.pinocchio_first_run
+    r2=input.pinocchio_last_run
+    if input.cat_type is 'pinocchio':
+        n1=r1
+        if r2 is not None:
+            n2=r2
+        else:
+            n2=n1
     else:
-        n2=n1
-else:
-    n1=n2=0
+        n1=n2=0
 
-fname = input.dndz_fname(r1=r1,r2=r2)
-print("# Reading dndz from {}".format(fname))
-dndz = astrofits.getdata(fname)
+    fname = input.dndz_fname(r1=r1,r2=r2)
+    print(f"# Reading dndz from {fname}")
+    with DefaultCatalogRead(fname) as store:
+        dndz = store['dn_dz']
 
-# you can skip the writing of the random
-if input.WriteLE3Random:
-    print("# reading random catalog {}...".format(input.random_fname()))
-    randomcat = astrofits.getdata(input.random_fname())
+    # you can skip the writing of the random
+    if input.WriteLE3Random:
+        print(f"# reading random catalog {input.random_fname()}...")
+        randomcat = astrofits.getdata(input.random_fname())
 
-    if (not input.apply_dataselection_to_random) & (input.selection_random_tag is not None):
-        fname=input.selection_random_fname()
-        print("# reading selection of random from file {}...".format(fname))
-        selection = astrofits.getdata(fname)['SELECTION']
+        if (not input.apply_dataselection_to_random) & (input.selection_random_tag is not None):
+            fname=input.selection_random_fname()
+            print("# reading selection of random from file {}...".format(fname))
+            with DefaultCatalogRead(fname) as store:
+                selection = store['SELECTION']['SELECTION']
+        else:
+            selection = np.ones(len(randomcat), dtype=bool)
+
+        for zshell in input.finalCatZShell:
+
+            zmin = zshell[0]
+            zmax = zshell[1]
+
+            print("# selecting the shell at z=%f-%f..."%(zmin,zmax))
+            sel = selection & (randomcat[input.redshift_key] >= zmin) & (randomcat[input.redshift_key] < zmax)
+            print("# computing weights...")
+            density = np.interp(randomcat[input.redshift_key][sel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
+
+            print("# writing random file {}".format(input.LE3_random_fname(zmin,zmax)))
+            write_catalog_LE3(input.LE3_random_fname(zmin,zmax),
+                        randomcat['ra_gal'][sel], randomcat['dec_gal'][sel], 
+                        randomcat[input.redshift_key][sel],
+                        density, type = "RANDOM", format = 'fits')
+
+        del randomcat
+
+
+    if input.cat_type is not 'pinocchio':
+        toprocess=[None]
     else:
-        selection = np.ones(len(randomcat), dtype=bool)
+        toprocess=range(n1,n2+1)
 
-    for zshell in input.finalCatZShell:
+    for myrun in toprocess:
+        fname=input.galcat_fname(myrun)
+        print(f"# reading data catalog {fname}...")
+        with DefaultCatalogRead(fname) as store:
+            cat = store["catalog"]
+        zused = cat[input.redshift_key]
+        if input.selection_data_tag is not None:
+            fname = input.selection_data_fname(run=myrun)
+            print("# loading selection {}...".format(fname))
+            with DefaultCatalogRead(fname) as store:
+                selection = store['SELECTION']['SELECTION']
+        else:
+            selection = np.ones(zused.size,dtype=bool)
 
-        zmin = zshell[0]
-        zmax = zshell[1]
+        for zshell in input.finalCatZShell:
 
-        print("# selecting the shell at z=%f-%f..."%(zmin,zmax))
-        sel = selection & (randomcat[input.redshift_key] >= zmin) & (randomcat[input.redshift_key] < zmax)
-        print("# computing weights...")
-        density = np.interp(randomcat[input.redshift_key][sel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
+            zmin = zshell[0]
+            zmax = zshell[1]
 
-        print("# writing random file {}".format(input.LE3_random_fname(zmin,zmax)))
-        write_catalog(input.LE3_random_fname(zmin,zmax),
-                      randomcat['ra_gal'][sel], randomcat['dec_gal'][sel], 
-                      randomcat[input.redshift_key][sel],
-                      density, type = "RANDOM", format = 'fits')
+            print("# selecting the shell at z=%f-%f..."%(zmin,zmax))
+            mysel = (zused >= zmin) & (zused < zmax) & selection
+            print("# computing weights...")
+            density = np.interp(zused[mysel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
 
-    del randomcat
-
-
-if input.cat_type is not 'pinocchio':
-    toprocess=[None]
-else:
-    toprocess=range(n1,n2+1)
-
-for myrun in toprocess:
-    fname=input.galcat_fname(myrun)
-    print("# reading data catalog {}...".format(fname))
-    cat = astrofits.getdata(fname)
-    zused = cat[input.redshift_key]
-    if input.selection_data_tag is not None:
-        fname = input.selection_data_fname(run=myrun)
-        print("# loading selection {}...".format(fname))
-        selection = astrofits.getdata(fname)['SELECTION']
-    else:
-        selection = np.ones(zused.size,dtype=bool)
-
-    for zshell in input.finalCatZShell:
-
-        zmin = zshell[0]
-        zmax = zshell[1]
-
-        print("# selecting the shell at z=%f-%f..."%(zmin,zmax))
-        mysel = (zused >= zmin) & (zused < zmax) & selection
-        print("# computing weights...")
-        density = np.interp(zused[mysel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
-
-        fname = input.LE3_data_fname(zmin,zmax,myrun)
-        print("# writing data file {}".format(fname))
-        write_catalog(fname, cat['ra_gal'][mysel], cat['dec_gal'][mysel], zused[mysel], 
-                      density, type = "DATA", format = 'fits')
+            fname = input.LE3_data_fname(zmin,zmax,myrun)
+            print("# writing data file {}".format(fname))
+            write_catalog(fname, cat['ra_gal'][mysel], cat['dec_gal'][mysel], zused[mysel], 
+                        density, type = "DATA", format = 'fits')
 
 
-print("# DONE!")
+    print("# DONE!")
