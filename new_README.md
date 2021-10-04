@@ -48,7 +48,7 @@ A default script that runs an entire pipeline is available in `quick.sh`. You ne
 Next you want to create a configuration file for your mock catalog. The pipeline comes bundled with
 a generator that can be invoked as:
 ```shell
-python3 -m euclid_obssys.tool generateInput --type sdhod -o mytest.py  --outdir OUTPUT
+python3 -m euclid_obssys.tool generateConfig --type sdhod -o mytest.py  --outdir OUTPUT
 ```
 (Remember: you have to replace `OUTPUT`  by that directory path)
 
