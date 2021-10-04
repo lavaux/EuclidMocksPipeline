@@ -8,6 +8,6 @@ setuptools.setup(
     project_urls={
         "Bug Tracker": "https://github.com/pypa/sampleproject/issues",
     },
-    package_dir={"euclid_obssys": "src/euclid_obssys"}
+    package_dir={"euclid_obssys": "euclid_obssys"}
 )
 
