@@ -69,7 +69,7 @@ def createSelection(
         print("# Selection will be applied to the data catalog")
 
     # check selection tags
-    if use_data:
+    if use_data: 
         if input.selection_data_tag is None:
             print("No selection specified for galaxy catalog, exiting")
             sys.exit(0)
@@ -340,9 +340,7 @@ def createSelection(
 
     print("# Writing file {}...".format(fname))
 
-    tofits = np.empty(Ngal, dtype=[("SELECTION", bool)])
-    tofits["SELECTION"] = selection
-
-    fits.writeto(fname, tofits, overwrite=True)
+    with DefaultCatalogWrite(fname) as store:
+        store.set_array("SELECTION", selection.asdtype([("SELECTION",bool)]))
 
     print("# Done!")

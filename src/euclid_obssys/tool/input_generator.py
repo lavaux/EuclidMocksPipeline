@@ -62,5 +62,45 @@ def generateConfig(
     with open(o, mode="wt") as f:
         f.write(input_template)
 
+@register_tool
+def generateSelConfig(
+    o: str,
+) -> None:
+    """This generate a configuration file for the Euclid Observational systematics pipeline (selection function).
 
-__all__ = ["generateConfig"]
+    Args:
+        o (str): [description]. Output configuration file Defaults to None.
+
+    Raises:
+        ValueError: [description]
+    """
+    import pkg_resources
+    import re
+    import os
+    import sys
+
+    input_template = pkg_resources.resource_string(
+        "euclid_obssys", "templates/sel_input.py"
+    ).decode("utf-8")
+
+    if o is None:
+        raise ValueError("Missing output file")
+
+    #replacements = {
+    #    "OUTDIR": outdir,
+    #    "FOOTTAG": f'"{footprintTag}"' if not footprintTag is None else "None",
+    #    "LFMODEL": repr(lf_model),
+    #    "CATTYPE": type,
+    #    "SHUFFLE": "False",
+    #    "SELDATA": "None",
+    #    "SELRAND": "None",
+    #    "RSDFLAG": repr(rsd),
+    #}
+
+    #for k, v in replacements.items():
+    #    input_template = re.sub(k, v, input_template)
+
+    with open(o, mode="wt") as f:
+        f.write(input_template)
+
+__all__ = ["generateConfig", "generateSelConfig"]
