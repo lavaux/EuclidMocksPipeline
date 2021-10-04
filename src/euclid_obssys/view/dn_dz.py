@@ -20,7 +20,7 @@ def dn_dz(config: str):
 
     input = readConfig(config)
 
-    print("# Running plot_dndz.py with {}".format(sys.argv[1]))
+    print(f"# Running plot_dndz.py with {config}")
 
     if not input.PLOT:
         print("Plots are not required, exiting...")

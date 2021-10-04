@@ -22,6 +22,7 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
     import healpy as hp
     from scipy.ndimage import gaussian_filter1d
     from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
+    import sys
 
     print(f"# Running dndz.py with {config}")
 
@@ -32,7 +33,7 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
 
     if not path.exists(fname):
         print("ERROR: galaxy catalog {} does not exist".format(fname))
-        return -1
+        sys.exit(1)
 
     with DefaultCatalogRead(fname) as store:
         cat = store["catalog"]
@@ -53,7 +54,7 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
 
     if np.abs((ztab[1] - ztab[0]) / input.deltazbin - 1) > 1e-5:
         print("!The chosen redshift binning and redshift range are not compatible!")
-        return -1
+        sys.exit(1)
 
     # comoving distances for bins
     bin_edges = np.asarray(
