@@ -6,6 +6,7 @@ c = 299792.0  # Km/s
 G = G.to("Mpc Msun^-1 km^2 s^-2").value  # G Newton in Mpc/Msun x (km/s)^2
 
 
+
 def randomSpherePoint(n=1, theta_max=np.pi, phi_max=2.0 * np.pi):
     """
     Returns random distributes theta (0,pi) and phi (0, 2pi)

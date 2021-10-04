@@ -1,22 +1,8 @@
 from . import get_tools
-from . import (
-    input_generator,
-    footprint,
-    extract,
-    hod,
-    random,
-    dn_dz,
-    numbercounts,
-    create_footprint,
-    create_fulloctant_footprint,
-    indices_for_sats,
-    apply_footprint,
-    create_selection,
-    writeCatalogs4LE3,
-)
+from . import angular_map, visualizeHOD, dn_dz
 
 
-class EuclidTool(object):
+class EuclidViewTool(object):
     """Euclid Observational systematics toolbox
 
     This is the euclid toolbox for generating mock catalogs from master catalogs, general
@@ -40,4 +26,4 @@ class EuclidTool(object):
 def run_tool():
     import fire
 
-    fire.Fire(EuclidTool, name="euclid_obssys.tool")
+    fire.Fire(EuclidViewTool, name="euclid_obssys.view")

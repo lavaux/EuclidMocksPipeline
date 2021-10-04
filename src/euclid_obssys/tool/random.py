@@ -5,6 +5,8 @@
 from . import register_tool
 from ..config import readConfig
 import sys
+from typing import Tuple
+from numpy.typing import *
 
 
 def nside2norder(nside):
@@ -47,6 +49,97 @@ def rand_vec_in_pix(nside, ipix, nest=False):
     return np.asarray(hp.pix2vec(nside=2 ** 29, ipix=i_up, nest=True)).transpose()
 
 
+def generate_random_simple(input: dict) -> Tuple[ArrayLike,ArrayLike]:
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    import numpy as np
+
+    fname = input.galcat_fname(input.pinocchio_first_run)
+    print ("# loading data catalog {}...".format(fname))
+    with DefaultCatalogRead(fname) as gal_store:
+        datacat = gal_store['catalog']
+
+        # apply selection to data catalog if required
+        if (input.apply_dataselection_to_random) & (input.selection_data_tag is not None):
+            print("# Applying selection {} to data...".format(input.selection_data_tag))
+            with DefaultCatalogRead(input.selection_data_fname()) as sel_store:
+                sel = sel_store['SELECTION']['SELECTION']
+            data_redshift = datacat[input.redshift_key][sel]
+            data_flux     = datacat[input.flux_key][sel]
+        else:
+            data_redshift = datacat[input.redshift_key]
+            data_flux     = datacat[input.flux_key]
+
+        del datacat
+
+    Ngal = data_redshift.size
+    Nrandom = np.int(input.alpha * Ngal)
+
+    # for a single data catalog, it adds galaxies randomly from the catalog
+    # until the wanted number is reached, so the sequence of galaxies is not 
+    # simply alpha replications of the data catalog
+    Nbunch  = Nrandom // 10
+    Nstored = 0
+    redshift = np.empty(Nrandom, dtype=float)
+    flux     = np.empty(Nrandom, dtype=float)
+    while (Nstored<Nrandom):
+
+        Nadd = Nbunch
+        if Nbunch + Nstored > Nrandom:
+            Nadd = Nrandom - Nstored
+
+        thesegals = np.random.uniform(0,Ngal,Nadd).astype(int)
+        redshift[Nstored:Nstored+Nadd] = data_redshift[thesegals]
+        flux[Nstored:Nstored+Nadd]     = data_flux[thesegals]
+        Nstored += Nadd
+        print("    added %d random galaxies, total: %d"%(Nadd,Nstored))
+
+    return redshift, flux
+
+def generate_random_pinocchio(input: dict) -> Tuple[ArrayLike, ArrayLike]:
+    import numpy as np
+    from ..disk import DefaultCatalogRead
+
+    # for a set of data catalogs, it adds them randomly to the random vector.
+    # Here each data mock is used as a whole, and it can be replicated several times
+    with DefaultCatalogRead(input.dndz_fname(r1=input.pinocchio_first_run,r2=input.pinocchio_last_run)) as dn_store:
+        dndz  = dn_store['dn_dz']
+    Ngal  = np.int(dndz['N_gal'].sum())
+    Nrandom = np.int(input.alpha * Ngal)
+
+    # we extract here alpha+1 mocks to avoid that the number of galaxies is insufficient
+    tobeused = np.sort(np.random.uniform(input.pinocchio_first_run,input.pinocchio_last_run+1,input.alpha+1).astype(int))
+    howmanytimes = np.array([np.in1d(tobeused,i).sum() for i in range(0,input.pinocchio_last_run+1)])
+
+    Nstored  = 0
+    redshift = np.empty(Nrandom, dtype=float)
+    flux     = np.empty(Nrandom, dtype=float)
+    for myrun in np.arange(input.pinocchio_first_run, input.pinocchio_last_run + 1):
+        if howmanytimes[myrun]>0:
+
+            fname = input.galcat_fname(myrun)
+            print ("# loading data catalog {} to be used {} times...".format(fname,howmanytimes[myrun]))
+            with DefaultCatalogRead(fname) as galstore:
+                datacat = galstore['catalog']
+            
+            Ndata = datacat[input.redshift_key].size
+            # no selection is applied to pinocchio mocks
+
+            for i in range(howmanytimes[myrun]):
+                if (Ndata + Nstored < Nrandom):
+                    Nadd = Ndata
+                    redshift[Nstored:Nstored + Ndata] = datacat[input.redshift_key]
+                    flux    [Nstored:Nstored + Ndata] = datacat[input.flux_key]
+                    Nstored += Ndata
+                else:
+                    Nadd = Nrandom-Nstored
+                    thesegals = np.random.uniform(0,Ndata,Nadd).astype(int)
+                    redshift[Nstored:Nrandom] = datacat[input.redshift_key][thesegals]
+                    flux    [Nstored:Nrandom] = datacat[input.flux_key][thesegals]
+                    Nstored = Nrandom
+                print("    added %d random galaxies, total: %d"%(Nadd,Nstored))
+    
+    return redshift, flux
+
 @register_tool
 def createRandom(config: str, legacy_algorithm: bool = False) -> None:
     """Creates a random for the galaxy catalog
@@ -58,7 +151,7 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
     Args:
         config (str): Pipeline config file
     """
-    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
     import healpy as hp
     import numpy as np
 
@@ -87,21 +180,14 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
         % (thmin, thmax, phmin, phmax)
     )
 
-    print(f"# loading data catalog {input.galcat_fname()}...")
-    with DefaultCatalogRead(input.galcat_fname()) as store:
-        datacat = store["catalog"]
-        data_redshift = datacat[input.redshift_key]
-        data_flux = datacat[input.my_flux_key]
-        del datacat
+    print("# Assigning redshifts and fluxes...")
+    if (input.cat_type is not 'pinocchio') | (input.pinocchio_last_run is None):
+        redshift,flux=generate_random_simple(input)
+    else:
+        redshift,flux=generate_random_pinocchio(input)
 
-    Ngal = data_redshift.size
-    Nrandom = np.int(input.alpha * Ngal)
-
-    print("# Starting to create {} random galaxies...".format(Nrandom))
-    print(f"# Using legacy algorithm = {legacy_algorithm}")
-    Nbunch = Nrandom // 10
-
-    Nstored = 0
+    Nrandom = redshift.size
+    print("# Saving random to file {}...".format(input.random_fname()))
 
     with DefaultCatalogWrite(input.random_fname()) as store:
         catalog = store.new_array(
@@ -118,35 +204,29 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
 
         ra_gal = catalog["ra_gal"]
         dec_gal = catalog["dec_gal"]
-        redshift = catalog[input.redshift_key]
-        flux = catalog[input.flux_key]
         print(f"footprint sum = {footprint.sum()}")
 
-        if not legacy_algorithm:
-            selected_pixels = np.where(footprint == 1)[0]
+        catalog[input.redshift_key] = redshift
+        catalog[input.flux_key] = flux
+
+        print("# Starting to create {} random galaxies...".format(Nrandom))
+        Nbunch = Nrandom // 10
+
+        Nstored = 0
+
+        selected_pixels = np.where(footprint == 1)[0]
         while Nstored < Nrandom:
             # pick a random pixel amont the footprint pixels that are 1
-            if not legacy_algorithm:
-                pix_list = selected_pixels[
-                    np.random.randint(low=0, high=selected_pixels.size, size=Nbunch)
-                ]
+            pix_list = selected_pixels[
+                np.random.randint(low=0, high=selected_pixels.size, size=Nbunch)
+            ]
 
-                # Pick a random vector inside each pixel
-                randvec = rand_vec_in_pix(
-                    nside=footprint_res, ipix=pix_list, nest=False
-                )
-                randdec, randra = hp.vec2ang(randvec)
-                Nselect = Nbunch
-            else:
-                randra = np.random.uniform(phmin, phmax, Nbunch)
-                randdec = np.arccos(
-                    np.random.uniform(np.cos(thmin), np.cos(thmax), Nbunch)
-                )
-
-                pix = hp.ang2pix(footprint_res, randdec, randra)
-
-                select = footprint[pix]
-                Nselect = select.sum()
+            # Pick a random vector inside each pixel
+            randvec = rand_vec_in_pix(
+                nside=footprint_res, ipix=pix_list, nest=False
+            )
+            randdec, randra = hp.vec2ang(randvec)
+            Nselect = Nbunch
 
             Nup2now = Nstored + Nselect
             if Nup2now > Nrandom:
@@ -164,29 +244,5 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
         ra_gal *= 180.0 / np.pi
         dec_gal *= 180.0 / np.pi
 
-        print("# Assigning redshifts and fluxes...")
-        Nbunch = Nrandom // 10
-        Nstored = 0
-        while Nstored < Nrandom:
-
-            Nadd = Nbunch
-            if Nbunch + Nstored > Nrandom:
-                Nadd = Nrandom - Nstored
-
-            thesegals = np.random.uniform(0, Ngal, Nadd).astype(int)
-            # This is experimental...
-            if input.smooth_dndz_in_random:
-                redshift[Nstored : Nstored + Nadd] = data_redshift[
-                    thesegals
-                ] * np.random.normal(
-                    1.0, input.deltazbin * input.smoothing_length, Nadd
-                )
-            else:
-                redshift[Nstored : Nstored + Nadd] = data_redshift[thesegals]
-            flux[Nstored : Nstored + Nadd] = data_flux[thesegals]
-            Nstored += Nadd
-            print("    added %d random galaxies, total: %d" % (Nadd, Nstored))
-
-        print("# Saving random to file {}...".format(input.random_fname()))
-
+    
     print("# DONE!")

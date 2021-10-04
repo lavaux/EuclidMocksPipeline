@@ -8,10 +8,13 @@ Setup a typical CONDA installation with python3. Activate your environment first
 python3 -m pip install -r requirements.txt
 ```
 
-Then you may run the installation of the euclid observational systematics package (euclid_obssys) using
+Then you may run the installation of the euclid observational systematics package (`euclid_obssys`) using
 ```
 python3 setup.py install
 ```
+
+Two basic tool are made available through `$PYTHON -m euclid_obssys.tool` and `$PYTHON -m euclid_obssys.view`. Each command comes with
+an help message describing the input/output and the optional arguments. Please consult `quick.sh` for a complete example.
 
 ## Workflow
 
@@ -36,12 +39,16 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
 Ask for a FITS file output. Once it is ready download the file in `OUTPUT/RawCatalogs/8614.fits`. 
 
 
+### Quick pipeline
+
+A default script that runs an entire pipeline is available in `quick.sh`. You need to have downloaded the flagship halos in `Products/RawCatalogs/catalogs_8614.fits`.
+
 ### Setting up configuration
 
 Next you want to create a configuration file for your mock catalog. The pipeline comes bundled with
 a generator that can be invoked as:
 ```shell
-python3 scripts/euclidGenerateInput.py --type sdhod -o mytest.py  --outdir OUTPUT
+python3 -m euclid_obssys.tool generateInput --type sdhod -o mytest.py  --outdir OUTPUT
 ```
 (Remember: you have to replace `OUTPUT`  by that directory path)
 
@@ -50,5 +57,5 @@ python3 scripts/euclidGenerateInput.py --type sdhod -o mytest.py  --outdir OUTPU
 
 Now we may use that configuration file with pipeline elements
 ```shell
-python3 Pipeline/applyFootprintToMasterCatalog.py mytest.py 
+python3 -m euclid_obssys.tool applyFootprintToMaster mytest.py 
 ```

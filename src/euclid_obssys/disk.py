@@ -6,6 +6,9 @@ import numpy as np
 import numpy.typing as npt
 import os
 
+def ensurePath(basepath):
+        if not os.path.exists(basepath):
+            os.makedirs(basepath)
 
 class AbstractCatalogWrite(ABC):
     @abstractmethod
@@ -64,8 +67,7 @@ class CatalogFitsWrite(AbstractCatalogWrite, AbstractContextManager):
             primary_hdu.header.append((f"TN{table_id}", array_name))
 
         basepath, _ = os.path.split(self.fname)
-        if not os.path.exists(basepath):
-            os.makedirs(basepath)
+        ensurePath(basepath)
 
         hdul.writeto(self.fname, overwrite=True)
         return None
@@ -111,6 +113,8 @@ class CatalogFitsRead(AbstractCatalogRead, AbstractContextManager):
             self.arrays = {}
             for i in range(1, len(self.file)):
                 self.arrays[self.header[f"TN{i}"]] = i
+        import pprint
+        pprint.pprint(self.arrays)
         return self
 
     def get_tag(self, name: str) -> object:

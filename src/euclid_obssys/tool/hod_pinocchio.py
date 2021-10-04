@@ -10,13 +10,13 @@ from ..config import readConfig
 def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> None:
     from astropy.io import fits
     import numpy as np
-    import NFW
-    import utils
-    import matchPinocchioHaloMasses as match
-    import sdhod
+    from .. import NFW
+    from .. import utils
+    from .. import match_pinocchio_masses as match
+    from .. import sdhod
     from colossus.halo import concentration
     from scipy.stats import poisson
-    import ReadPinocchio as rp
+    from .. import pinocchio as rp
     import healpy as hp
     import sys
     import os.path

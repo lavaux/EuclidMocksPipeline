@@ -6,18 +6,12 @@ import numpy as np
 
 # This file containts all the information needed to define a selection
 
-selection_tag ='lut'         # this defines a name for a specific selection
+selection_tag ='MWext'         # this defines a name for a specific selection
 
 # selection keys can contain 'extinction','visibilitymask','fluxcut','central','satellite'
 # 'visibilitymask' and 'fluxcut' cannot be present together
 # 'central' and 'satellite' cannot be present together
-selection_keys=['lookup','extinction']
-
-# lookup table section
-lookup_table_fname   = 'LookUpTable/lookup_table_15by15.fits'
-lookup_exptime_fname = None # 'LookUpTable/sc8_expmap_G.fits'
-lookup_noise_fname   = None # 'LookUpTable/sc8_varmap_G.fits'
-lookup_Nside         = 4096
+selection_keys=['extinction']   
 
 # flux limit
 selection_logflux_limit = -100. # log of flux limit for 'fluxcut' and 'extinction'

@@ -53,6 +53,7 @@ selection_random_tag = SELRAND #'MWext'
 SEED_random=12345
 alpha=50
 smooth_dndz_in_random = False   # if True the random follows the smoothed dn/dz
+apply_dataselection_to_random = False
 
 # MEASUREMENT SECTION
 # Redshift Space Distorsions - if True use observed_redshift_gal as redshift, 
@@ -92,6 +93,20 @@ ngrid = 1024
 ###############################################
 # What is written below should not be changed #
 ###############################################
+
+# applying data selection to the construction of random
+if (apply_dataselection_to_random) & (selection_data_tag is not None):
+    selection_random_tag = 'DS'+selection_data_tag
+
+
+# sets all pinocchio variables to None if pinocchio runs are not used
+if cat_type is not 'pinocchio':
+    pinocchio_repo=None
+    pinocchio_kernel=None
+    pinocchio_rotator=None
+    pinocchio_first_run=None
+    pinocchio_last_run=None
+    MASS_SHIFT = None
 
 
 # this is for reading a footprint file
@@ -220,6 +235,12 @@ def ngrid_tag():
     return 'gr{}'.format(ngrid)
 def Lbox_tag():
     return 'box{}'.format(Lbox)
+def sh_tag():
+    if shuffled_fluxes:
+        return 'shuffled'
+    else:
+        return None
+
 
 # file names
 
@@ -244,31 +265,42 @@ def pincat_fname(r):
 def SDHOD_fname():
     return build_fname('SDHOD',['SDHOD',query,lf_model_tag(),sm_tag(),cm_tag()])
 
-def galcat_fname(tag=cat_type):
+def pinplc_fname(r):
+    run="{}{:04d}".format(pinocchio_kernel,r)
+    return "{}/{}/pinocchio.{}.plc.out".format(pinocchio_repo,run,run)
 
-    if tag == 'box':
+def galcat_fname(pin_run=None,pin_last=None):
+    import sys
+    
+    if cat_type=='box':
         return boxcat_fname()
-    elif tag == 'flagship':
+    elif cat_type=='flagship':
         return flagcat_fname()
-    elif tag == 'sdhod':
+    elif cat_type=='sdhod':
         return hodcat_fname()
-    elif tag == 'pinocchio':
-        return pincat_fname()
+    elif cat_type=='pinocchio':
+        return pincat_fname(pin_run,pin_last)
     else:
         print("ERROR in input.galcat_fname: unrecognised cat_type")
         sys.exit(1)
 
-def galcat_kernel(tag=cat_type):
-    return exclude_dir(galcat_fname(tag))[:-5]
 
-def selection_data_fname(sel_tag=selection_data_tag):
-    if not sel_tag is None:
-        return build_fname('Selections',['data',sel_tag,galcat_kernel()])
+def galcat_kernel(pin_run=None,pin_last=None):
+    return exclude_dir(galcat_fname(pin_run,pin_last))[:-5]
+
+
+def selection_data_fname(sel_tag=selection_data_tag, run=None):
+    if sel_tag is not None:
+        return build_fname('Selections',['data',sel_tag,galcat_kernel(run),sh_tag()])
     else:
         return ''
+        
 def selection_random_fname(sel_tag=selection_random_tag):
-    if not sel_tag is None:
-        return build_fname('Selections',['random',sel_tag,galcat_kernel()])
+    if sel_tag is not None:
+        if cat_type is 'pinocchio':
+            return build_fname('Selections',['random',sel_tag,galcat_kernel(pinocchio_first_run,pinocchio_last_run),sh_tag()])
+        else:
+            return build_fname('Selections',['random',sel_tag,galcat_kernel(),sh_tag()])
     else:
         return ''
 
@@ -278,39 +310,50 @@ def selection_tag():
     else:
         return 'ds{}_rs{}'.format(selection_data_tag,selection_random_tag)
 
-def dndz_fname(sel_tag=selection_data_tag):
-    return build_fname('NumberCounts',['dndz',sel_tag,galcat_kernel(),sm_tag(),rsd_tag()])
+def dndz_fname(r1=None,r2=None, sel_tag=selection_data_tag,):
+    return build_fname('NumberCounts',['dndz',sel_tag,galcat_kernel(r1,r2),sh_tag(),sm_tag(),rsd_tag()])
+
+
 def random_fname():
-    return build_fname('RandomCatalogs',['random',galcat_kernel(),random_sm_tag(),rsd_tag(),alpha_tag()])
+    if apply_dataselection_to_random:
+        sel_tag = selection_random_tag
+    else:
+        sel_tag = None
+    return build_fname('RandomCatalogs',['random',sel_tag,galcat_kernel(pinocchio_first_run,pinocchio_last_run),random_sm_tag(),rsd_tag(),alpha_tag()])
 
-def numbercounts_fname( z1, z2, sel_tag=selection_data_tag): 
-    return build_fname('NumberCounts',['numbercounts',sel_tag,galcat_kernel(),rsd_tag(),'z{}-{}'.format(z1,z2)])
-def cls_fname( z1, z2):
-    return build_fname('Cls',['Cls',selection_tag(),galcat_kernel(),sm_tag(),rsd_tag(),'z{}-{}'.format(z1,z2)])
 
-def LE3_data_fname( z1, z2):
-    return build_fname('Catalogs4LE3',['data',selection_data_tag,galcat_kernel(),rsd_tag(),'z{}-{}'.format(z1,z2)])
-def LE3_random_fname( z1, z2): 
-    return build_fname('Catalogs4LE3',['random',selection_random_tag,galcat_kernel(),random_sm_tag(),rsd_tag(),alpha_tag(),'z{}-{}'.format(z1,z2)])
+def numbercounts_fname( z1, z2, sel_tag=selection_data_tag, run=None ): 
+    return build_fname('NumberCounts',['numbercounts',sel_tag,galcat_kernel(run),sh_tag(),rsd_tag(),'z{}-{}'.format(z1,z2)])
 
-def delta_data_fname( z1, z2):
-    return build_fname('Cls',['delta_data',selection_data_tag,galcat_kernel(),rsd_tag(),'z{}-{}'.format(z1,z2)])
-def delta_random_fname( z1, z2): 
-    return build_fname('Cls',['delta_random',selection_random_tag,galcat_kernel(),random_sm_tag(),rsd_tag(),alpha_tag(),'z{}-{}'.format(z1,z2)])
 
-def params_fname( z1, z2): 
-    return build_fname('PkParams',['params',selection_tag(),galcat_kernel(),random_sm_tag(),rsd_tag(),alpha_tag(),ngrid_tag(),Lbox_tag(),'z{}-{}'.format(z1,z2)],ext='.ini')
-def pk_fname( z1, z2): 
-    return build_fname('Pks',['pk',selection_tag(),galcat_kernel(),random_sm_tag(),rsd_tag(),alpha_tag(),ngrid_tag(),Lbox_tag(),'z{}-{}'.format(z1,z2)],ext='')
-def script_fname( num): 
-    return build_fname('PkScripts',['script',selection_tag(),galcat_kernel(),random_sm_tag(),rsd_tag(),alpha_tag(),ngrid_tag(),Lbox_tag(),'{}'.format(num)],ext='.sh')
+def cls_fname( z1, z2, run=None ):
+    return build_fname('Cls',['Cls',selection_tag(),galcat_kernel(run),sh_tag(),sm_tag(),rsd_tag(),'z{}-{}'.format(z1,z2)])
 
-def plot_dndz_fname(sel_tag=selection_data_tag):
-    return build_fname('Plots',['dndz',sel_tag,galcat_kernel(),sm_tag(),rsd_tag()],ext='.png')
-def plot_numbercounts_fname( z1, z2, sel_tag=selection_data_tag):
-    return build_fname('Plots',['numbercounts',sel_tag,galcat_kernel(),rsd_tag(),'z{}-{}'.format(z1,z2)],ext='.png')
-def plot_cls_fname( z1, z2): 
-    return build_fname('Plots',['cls',selection_tag(),galcat_kernel(),sm_tag(),rsd_tag(),'z{}-{}'.format(z1,z2)],ext='.png')
-def plot_pk_fname( z1, z2): 
-    return build_fname('Plots',['pk',selection_tag(),galcat_kernel(),random_sm_tag(),rsd_tag(),alpha_tag(),ngrid_tag(),Lbox_tag(),'z{}-{}'.format(z1,z2)],ext='.png')
 
+def LE3_data_fname( z1, z2, run=None ):
+    return build_fname('Catalogs4LE3',['data',selection_data_tag,galcat_kernel(run),sh_tag(),rsd_tag(),'z{}-{}'.format(z1,z2)])
+def LE3_random_fname( z1, z2 ): 
+    return build_fname('Catalogs4LE3',['random',selection_random_tag,galcat_kernel(pinocchio_first_run,pinocchio_last_run),random_sm_tag(),rsd_tag(),alpha_tag(),'z{}-{}'.format(z1,z2)])
+
+
+def delta_data_fname( z1, z2, run=None ):
+    return build_fname('Cls',['delta_data',selection_data_tag,galcat_kernel(run),sh_tag(),rsd_tag(),'z{}-{}'.format(z1,z2)])
+def delta_random_fname( z1, z2 ): 
+    return build_fname('Cls',['delta_random',selection_random_tag,galcat_kernel(pinocchio_first_run,pinocchio_last_run),random_sm_tag(),rsd_tag(),alpha_tag(),'z{}-{}'.format(z1,z2)])
+
+def params_fname( z1, z2, run=None ): 
+    return build_fname('PkParams',['params',selection_tag(),galcat_kernel(run),sh_tag(),random_sm_tag(),rsd_tag(),alpha_tag(),ngrid_tag(),Lbox_tag(),'z{}-{}'.format(z1,z2)],ext='.ini')
+def pk_fname( z1, z2, run=None ): 
+    return build_fname('Pks',['pk',selection_tag(),galcat_kernel(run),sh_tag(),random_sm_tag(),rsd_tag(),alpha_tag(),ngrid_tag(),Lbox_tag(),'z{}-{}'.format(z1,z2)],ext='')
+def script_fname( num ): 
+    return build_fname('PkScripts',['script',selection_tag(),galcat_kernel(pinocchio_first_run,pinocchio_last_run),sh_tag(),random_sm_tag(),rsd_tag(),alpha_tag(),ngrid_tag(),Lbox_tag(),'{}'.format(num)],ext='.sh')
+
+def plot_dndz_fname( r1=None, r2=None ):
+    return build_fname('Plots',['dndz',selection_tag(),galcat_kernel(r1,r2),sh_tag(),sm_tag(),rsd_tag()],ext='.png')
+
+def plot_numbercounts_fname( z1, z2, run=None ):
+    return build_fname('Plots',['numbercounts',selection_tag(),galcat_kernel(run),sh_tag(),rsd_tag(),'z{}-{}'.format(z1,z2)],ext='.png')
+def plot_cls_fname( z1, z2, run=None ): 
+    return build_fname('Plots',['cls',selection_tag(),galcat_kernel(run),sh_tag(),sm_tag(),rsd_tag(),'z{}-{}'.format(z1,z2)],ext='.png')
+def plot_pk_fname( order, z1, z2, run=None ): 
+    return build_fname('Plots',['pk{}'.format(order),selection_tag(),galcat_kernel(run),sh_tag(),random_sm_tag(),rsd_tag(),alpha_tag(),ngrid_tag(),Lbox_tag(),'z{}-{}'.format(z1,z2)],ext='.png')
