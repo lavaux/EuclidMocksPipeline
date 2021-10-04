@@ -245,10 +245,10 @@ def sh_tag():
 # file names
 
 def master_fname():
-    return build_fname('RawCatalogs',[query,footprint_tag], ext='.zarr')
+    return build_fname('RawCatalogs',[query,footprint_tag], ext='.fits')
 
 def indices_fname():
-    return build_fname('RawCatalogs',[query,footprint_tag,'indices'], ext='.zarr')
+    return build_fname('RawCatalogs',[query,footprint_tag,'indices'], ext='.fits')
 
 def boxcat_fname():
     return build_fname('GalaxyCatalogs',['box',      otherlab,lf_model_tag(),cm_tag()])

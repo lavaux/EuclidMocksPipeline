@@ -69,8 +69,6 @@ def applyFootprintToMaster(config: str) -> None:
         for field in cat.dtype.names:
             print(f"# Doing field {field}")
             extract[field] = cat[field][foot_sel]
-        # foot_sel] = zarr.copy(cat[foot_sel], extract, log=sys.stdout)
-        # =cat[field][foot_sel]
 
     # print('# writing catalog to file {}/RawCatalogs/{}_{}.fits'.format(input['outdir'],input['query'],input['footprint_tag']))
 
