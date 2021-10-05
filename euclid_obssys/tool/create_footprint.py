@@ -72,11 +72,16 @@ def createFootprint(outdir: str = "Products") -> None:
     with DefaultCatalogWrite(footprint_fname) as out_file:
 
         footprint = footprint.astype([("FOOTPRINT_G", int)])
-        out_file.set_array("footprint", footprint)
-        out_file.add_tag("RES", footprint_res)
-        out_file.add_tag("MINZ", footprint_zrange[0])
-        out_file.add_tag("MAXZ", footprint_zrange[1])
-        out_file.add_tag("TAG", footprint_tag)
-        out_file.add_tag("SKYFRAC", sky_fraction)
+        out_file.set_array(
+            "footprint",
+            footprint,
+            tags={
+                "RES": footprint_res,
+                "MINZ": footprint_zrange[0],
+                "MAXZ": footprint_zrange[1],
+                "TAG": footprint_tag,
+                "SKYFRAC": sky_fraction,
+            },
+        )
 
     print("DONE!!!")
