@@ -10,10 +10,8 @@ from ..config import readConfig
 def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> None:
     from astropy.io import fits
     import numpy as np
-    from .. import NFW
-    from .. import utils
+    from .. import NFW, utils, sdhod, filenames
     from .. import match_pinocchio_masses as match
-    from .. import sdhod
     from colossus.halo import concentration
     from scipy.stats import poisson
     from .. import pinocchio as rp
@@ -35,8 +33,8 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
     # to have a more flexible approach one should create an array of seeds, one for each run
     np.random.seed(seed=input.SEED_hod)
 
-    print("# Reading the HOD table {}...".format(input.SDHOD_fname()))
-    hodtable = fits.getdata(input.SDHOD_fname())
+    print("# Reading the HOD table {}...".format(filenames.SDHOD(input)))
+    hodtable = fits.getdata(filenames.SDHOD(input))
 
     for myrun in np.arange(starting_run, last_run + 1):
 
@@ -44,7 +42,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         print("\n# starting with catalog %d\n" % myrun)
 
-        pinfname = input.pinplc_fname(myrun)
+        pinfname = filenames.pinplc(input, myrun)
         if not os.path.isfile(pinfname):
             print("ERROR, file {} not found, skipping this run")
             continue
@@ -134,18 +132,18 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
         Ngal = int(totSat + totCentrals)
 
         print("# Creating the galaxy variables")
-        ra_gal = np.empty(Ngal, dtype=np.float)
-        dec_gal = np.empty(Ngal, dtype=np.float)
-        xgal = np.empty(Ngal, dtype=np.float)
-        ygal = np.empty(Ngal, dtype=np.float)
-        zgal = np.empty(Ngal, dtype=np.float)
-        rgal = np.empty(Ngal, dtype=np.float)
-        vlosgal = np.empty(Ngal, dtype=np.float)
-        true_zgal = np.empty(Ngal, dtype=np.float)
-        obs_zgal = np.empty(Ngal, dtype=np.float)
-        halo_m = np.empty(Ngal, dtype=np.float)
-        log10f = np.empty(Ngal, dtype=np.float)
-        kind = np.empty(Ngal, dtype=np.int)
+        ra_gal = np.empty(Ngal, dtype=np.float32)
+        dec_gal = np.empty(Ngal, dtype=np.float32)
+        xgal = np.empty(Ngal, dtype=np.float32)
+        ygal = np.empty(Ngal, dtype=np.float32)
+        zgal = np.empty(Ngal, dtype=np.float32)
+        rgal = np.empty(Ngal, dtype=np.float32)
+        vlosgal = np.empty(Ngal, dtype=np.float32)
+        true_zgal = np.empty(Ngal, dtype=np.float32)
+        obs_zgal = np.empty(Ngal, dtype=np.float32)
+        halo_m = np.empty(Ngal, dtype=np.float32)
+        log10f = np.empty(Ngal, dtype=np.float32)
+        kind = np.empty(Ngal, dtype=np.int32)
         haloid = np.empty(Ngal, dtype=np.int64)
 
         cid = np.arange(Ngal)
@@ -203,7 +201,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
         NwithSat = np.count_nonzero(hostSat)
         Nsat = Nsat[hostSat]
 
-        myhalo = np.zeros(totSat, dtype=np.int)
+        myhalo = np.zeros(totSat, dtype=np.int32)
         cc = 0
         for i in range(NwithSat):
             myhalo[cc : cc + Nsat[i]] = i
@@ -307,25 +305,25 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
             np.random.shuffle(extract)
             shuffled_log10f[ff] = extract
 
-        fname = input.pincat_fname(myrun)
+        fname = filenames.pincat(input, myrun)
         print("# Saving the catalog to file {}".format(fname))
 
         catalog = np.empty(
             Ngal,
             dtype=[
-                ("x_gal", np.float),
-                ("y_gal", np.float),
-                ("z_gal", np.float),
-                ("ra_gal", np.float),
-                ("dec_gal", np.float),
-                ("kind", np.int),
-                ("true_redshift_gal", np.float),
-                ("observed_redshift_gal", np.float),
-                ("halo_lm", np.float),
-                ("id", np.int),
-                ("halo_id", np.int),
-                (input.flux_key, np.float),
-                ("sh_" + input.flux_key, np.float),
+                ("x_gal", np.float32),
+                ("y_gal", np.float32),
+                ("z_gal", np.float32),
+                ("ra_gal", np.float32),
+                ("dec_gal", np.float32),
+                ("kind", np.int32),
+                ("true_redshift_gal", np.float32),
+                ("observed_redshift_gal", np.float32),
+                ("halo_lm", np.float32),
+                ("id", np.int32),
+                ("halo_id", np.int32),
+                (input.flux_key, np.float32),
+                ("sh_" + input.flux_key, np.float32),
             ],
         )
 

@@ -52,16 +52,17 @@ def rand_vec_in_pix(nside, ipix, nest=False):
 def generate_random_simple(input: dict) -> Tuple[ArrayLike,ArrayLike]:
     from ..disk import DefaultCatalogRead, DefaultCatalogWrite
     import numpy as np
+    from ..filenames import galcat, selection_data
 
-    fname = input.galcat_fname(input.pinocchio_first_run)
+    fname = galcat(input, input.pinocchio_first_run)
     print ("# loading data catalog {}...".format(fname))
     with DefaultCatalogRead(fname) as gal_store:
         datacat = gal_store['catalog']
 
         # apply selection to data catalog if required
         if (input.apply_dataselection_to_random) & (input.selection_data_tag is not None):
-            print("# Applying selection {} to data...".format(input.selection_data_tag))
-            with DefaultCatalogRead(input.selection_data_fname()) as sel_store:
+            print("# Applying selection {input.selection_data_tag} to data...")
+            with DefaultCatalogRead(selection_data(input)) as sel_store:
                 sel = sel_store['SELECTION']['SELECTION']
             data_redshift = datacat[input.redshift_key][sel]
             data_flux     = datacat[input.flux_key][sel]
@@ -98,10 +99,11 @@ def generate_random_simple(input: dict) -> Tuple[ArrayLike,ArrayLike]:
 def generate_random_pinocchio(input: dict) -> Tuple[ArrayLike, ArrayLike]:
     import numpy as np
     from ..disk import DefaultCatalogRead
+    from ..filenames import galcat, dndz
 
     # for a set of data catalogs, it adds them randomly to the random vector.
     # Here each data mock is used as a whole, and it can be replicated several times
-    with DefaultCatalogRead(input.dndz_fname(r1=input.pinocchio_first_run,r2=input.pinocchio_last_run)) as dn_store:
+    with DefaultCatalogRead(dndz(r1=input.pinocchio_first_run,r2=input.pinocchio_last_run)) as dn_store:
         dndz  = dn_store['dn_dz']
     Ngal  = np.int(dndz['N_gal'].sum())
     Nrandom = np.int(input.alpha * Ngal)
@@ -116,27 +118,32 @@ def generate_random_pinocchio(input: dict) -> Tuple[ArrayLike, ArrayLike]:
     for myrun in np.arange(input.pinocchio_first_run, input.pinocchio_last_run + 1):
         if howmanytimes[myrun]>0:
 
-            fname = input.galcat_fname(myrun)
+            fname = galcat(myrun)
             print ("# loading data catalog {} to be used {} times...".format(fname,howmanytimes[myrun]))
             with DefaultCatalogRead(fname) as galstore:
                 datacat = galstore['catalog']
             
-            Ndata = datacat[input.redshift_key].size
+            # applies selection if required
+            if (input.apply_dataselection_to_random) & (input.selection_data_tag is not None):
+                print("# Applying selection {} to data...".format(input.selection_data_tag))
+                with DefaultCatalogRead(selection_data(input, myrun)) as selstore:
+                    sel = sel['SELECTION']['SELECTION']
+                data_redshift = datacat[input.redshift_key][sel]
+                data_flux     = datacat[input.flux_key][sel]
+            else:
+                data_redshift = datacat[input.redshift_key]
+                data_flux     = datacat[input.flux_key]
+            del datacat
+
+            Ndata = data_redshift.size
             # no selection is applied to pinocchio mocks
 
             for i in range(howmanytimes[myrun]):
-                if (Ndata + Nstored < Nrandom):
-                    Nadd = Ndata
-                    redshift[Nstored:Nstored + Ndata] = datacat[input.redshift_key]
-                    flux    [Nstored:Nstored + Ndata] = datacat[input.flux_key]
-                    Nstored += Ndata
-                else:
-                    Nadd = Nrandom-Nstored
-                    thesegals = np.random.uniform(0,Ndata,Nadd).astype(int)
-                    redshift[Nstored:Nrandom] = datacat[input.redshift_key][thesegals]
-                    flux    [Nstored:Nrandom] = datacat[input.flux_key][thesegals]
-                    Nstored = Nrandom
-                print("    added %d random galaxies, total: %d"%(Nadd,Nstored))
+                redshift = np.concatenate((redshift,data_redshift))
+                flux     = np.concatenate((flux,data_flux))
+
+                Nrandom+=Ndata
+                print("    added %d random galaxies, total: %d"%(Ndata,Nrandom))
     
     return redshift, flux
 
@@ -152,6 +159,7 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
         config (str): Pipeline config file
     """
     from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    from .. import filenames
     import healpy as hp
     import numpy as np
 
@@ -187,9 +195,9 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
         redshift,flux=generate_random_pinocchio(input)
 
     Nrandom = redshift.size
-    print("# Saving random to file {}...".format(input.random_fname()))
+    print("# Saving random to file {}...".format(filenames.random(input)))
 
-    with DefaultCatalogWrite(input.random_fname()) as store:
+    with DefaultCatalogWrite(filenames.random(input)) as store:
         catalog = store.new_array(
             "catalog",
             shape=(Nrandom,),

@@ -18,7 +18,8 @@ def createSelection(
     import sys
     import os
     from scipy.interpolate import RegularGridInterpolator
-    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    from .. import filenames
 
     def extinction_curve(z):
 
@@ -110,10 +111,10 @@ def createSelection(
         myrun = input.cat_type
 
     if use_data:
-        cat_fname = input.galcat_fname(myrun)
+        cat_fname = filenames.galcat(input, myrun)
         print(f"Opening galaxy catalog {cat_fname}...")
     else:
-        cat_fname = input.random_fname()
+        cat_fname = filenames.random(input)
         print(f"Opening random catalog {cat_fname}...")
 
     with DefaultCatalogRead(cat_fname) as store:
@@ -129,12 +130,11 @@ def createSelection(
 
         # this option is alternative to extinction, visibilitymask, fluxcut
 
+        lut_fname = os.path.join(input.repo, sel_input.lookup_table_fname)
         print(
-            "Loading lookup table {}".format(
-                input.outdir + sel_input.lookup_table_fname
-            )
+            f"Loading lookup table {lut_fname}"
         )
-        lut = fits.getdata(os.path.join(input.outdir, sel_input.lookup_table_fname))
+        lut = fits.getdata(lut_fname)
 
         # THESE SHOULD BE IN THE HEADER...
         nred = 14
@@ -180,7 +180,7 @@ def createSelection(
 
             print("# applying extinction in lookup table...")
             conv = np.pi / 180.0
-            fname = os.path.join(input.outdir, sel_input.extinctionmap_fname)
+            fname = os.path.join(input.repo, sel_input.extinctionmap_fname)
             print("# loading reddening map {}...".format(fname))
             reddening = hp.read_map(fname, field=sel_input.extinctionmap_field)
             if sel_input.extinctionmap_res != hp.npix2nside(reddening.size):
@@ -199,16 +199,15 @@ def createSelection(
         # background noise
         if sel_input.lookup_noise_fname is None:
             print("# Background set to minimal")
-            background = xbkg[0] * np.ones(Ngal, dtype=np.float)  # minimal background
+            background = xbkg[0] * np.ones(Ngal, dtype=np.float32)  # minimal background
         else:
-            if os.path.isfile(input.outdir + sel_input.lookup_noise_fname):
+            noise_fname = os.path.join(input.outdir, sel_input.lookup_noise_fname)
+            if os.path.isfile(noise_fname):
                 print(
-                    "# Reading noise map {}".format(
-                        input.outdir + sel_input.lookup_noise_fname
-                    )
+                    f"# Reading noise map {noise_fname}"
                 )
                 noise_map = hp.read_map(
-                    input.outdir + sel_input.lookup_noise_fname, partial=True
+                    noise_fname, partial=True
                 )
                 if pixels is None:
                     conv = np.pi / 180.0
@@ -230,18 +229,13 @@ def createSelection(
         if sel_input.lookup_exptime_fname is None:
             print("# Exposure map set to 4 exposures for all")
             exposure = (
-                4.0 * one_exposure * np.ones(Ngal, dtype=np.float)
+                4.0 * one_exposure * np.ones(Ngal, dtype=np.float32)
             )  # four exposures
         else:
-            if os.path.isfile(input.outdir + sel_input.lookup_exptime_fname):
-                print(
-                    "# Reading exposure time map {}".format(
-                        input.outdir + sel_input.lookup_exptime_fname
-                    )
-                )
-                exptime_map = hp.read_map(
-                    input.outdir + sel_input.lookup_exptime_fname, partial=True
-                )
+            exptime_fname = os.path.join(input.outdir , sel_input.lookup_exptime_fname)
+            if os.path.isfile(exptime_fname):
+                print(f"# Reading exposure time map {exptime_fname}")
+                exptime_map = hp.read_map(exptime_fname, partial=True)
                 if pixels is None:
                     conv = np.pi / 180.0
                     pixels = hp.ang2pix(
@@ -278,7 +272,7 @@ def createSelection(
 
         # THIS PROCESS MAY BE HEAVY FOR THE RANDOM CATALOG, WE MAY SPLIT IT INTO SEVERAL SECTIONS
 
-        fname = input.outdir + sel_input.extinctionmap_fname
+        fname = os.path.join(input.repo, sel_input.extinctionmap_fname)
         print("# loading reddening map {}...".format(fname))
         reddening = hp.read_map(fname, field=sel_input.extinctionmap_field)
         if sel_input.extinctionmap_res != hp.npix2nside(reddening.size):
@@ -303,14 +297,12 @@ def createSelection(
         selection &= cat[input.flux_key] >= sel_input.selection_logflux_limit
 
     elif "visibilitymask" in sel_input.selection_keys:
-
+        VM_fname = os.path.join(input.repo, sel_input.selection_VM_fname)
         print(
-            "# applying visibility mask {}...".format(
-                input.outdir + sel_input.selection_VM_fname
-            )
+            f"# applying visibility mask {VM_fname}..."
         )
 
-        VM = fits.getdata(input.outdir + sel_input.selection_VM_fname)["VM"]
+        VM = fits.getdata(VM_fname)["VM"]
         VM = hp.ud_grade(VM, sel_input.selection_VM_res)
 
         conv = np.pi / 180.0
@@ -337,9 +329,9 @@ def createSelection(
             selection &= cat["kind"] == 1
 
     if use_data:
-        fname = input.selection_data_fname()
+        fname = filenames.selection_data(input)
     else:
-        fname = input.selection_random_fname()
+        fname = filenames.selection_random(input)
 
     print(f"# Writing file {fname}...")
 

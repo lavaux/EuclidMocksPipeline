@@ -7,7 +7,7 @@ from ..config import readConfig
 
 
 @register_tool
-def createFootprint(outdir: str = "Products") -> None:
+def createFootprint(outdir: str = "Repo") -> None:
     import numpy as np
     import matplotlib
 
@@ -64,7 +64,7 @@ def createFootprint(outdir: str = "Products") -> None:
     foot2 = reddening.copy()
     foot2[footprint] *= 2
     hp.mollview(foot2, max=1000)
-    plt.savefig(path.join(outdir, "Plots", "100sqdeg.png"))
+    plt.savefig(path.join(outdir, "Footprints", "100sqdeg.png"))
 
     # writes footprint on fits file
     print("## writing footprint on file {}".format(footprint_fname))

@@ -15,7 +15,7 @@ def createSmoothHOD(config: str) -> None:
     Args:
         config (str): Pipeline configuration file.
     """
-    from .. import sdhod, NFW, utils
+    from .. import sdhod, NFW, utils, filenames
     import numpy as np
     from colossus.cosmology import cosmology
     from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
@@ -146,9 +146,9 @@ def createSmoothHOD(config: str) -> None:
     Ncen_g = Ncen_g.sum(axis=0) - Ncen_g.cumsum(axis=0) + Ncen_g
     Nsat_g = Nsat_g.sum(axis=0) - Nsat_g.cumsum(axis=0) + Nsat_g
 
-    print("# Writing file {}...".format(input.SDHOD_fname()))
+    print("# Writing file {}...".format(filenames.SDHOD(input)))
 
-    with DefaultCatalogWrite(input.SDHOD_fname()) as out_file:
+    with DefaultCatalogWrite(filenames.SDHOD(input)) as out_file:
 
         cat = out_file.new_array(
             "sdhod",
@@ -194,7 +194,7 @@ def createSDHOD_Catalog(config: str) -> None:
         config (str): [description]
 
     """
-    from .. import sdhod, NFW, utils
+    from .. import sdhod, NFW, utils, filenames
     from colossus.halo import concentration
     from colossus.cosmology import cosmology
     from astropy.io import fits
@@ -217,12 +217,12 @@ def createSDHOD_Catalog(config: str) -> None:
     # seed for random numbers
     np.random.seed(seed=input.SEED_hod)
 
-    print("# Reading the HOD table {}...".format(input.SDHOD_fname()))
-    with DefaultCatalogRead(input.SDHOD_fname()) as in_file:
+    print("# Reading the HOD table {}...".format(filenames.SDHOD(input)))
+    with DefaultCatalogRead(filenames.SDHOD(input)) as in_file:
         hodtable = in_file["sdhod"]
 
-    print("# Reading the halo catalog from {}...".format(input.master_fname()))
-    with DefaultCatalogRead(input.master_fname()) as store:
+    print("# Reading the halo catalog from {}...".format(filenames.master(input)))
+    with DefaultCatalogRead(filenames.master(input)) as store:
         rawcat = store["catalog"]
 
         c_kind = rawcat["kind"]
@@ -428,8 +428,8 @@ def createSDHOD_Catalog(config: str) -> None:
         np.random.shuffle(extract)
         shuffled_log10f[ff] = extract
 
-    print("# Saving the catalog to file {}".format(input.hodcat_fname()))
-    with DefaultCatalogWrite(input.hodcat_fname()) as output:
+    print("# Saving the catalog to file {}".format(filenames.hodcat(input)))
+    with DefaultCatalogWrite(filenames.hodcat(input)) as output:
         catalog = output.new_array(
             "catalog",
             shape=(Ngal,),

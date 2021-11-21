@@ -17,7 +17,8 @@ def extractGalaxyCatalogFromMaster(config: str):
     Args:
         config (str): The pipeline configuration file
     """
-    from euclid_obssys.disk import DefaultCatalogWrite, DefaultCatalogRead
+    from ..disk import DefaultCatalogWrite, DefaultCatalogRead
+    from .. import filenames
     import numpy as np
 
     input = readConfig(config)
@@ -27,10 +28,11 @@ def extractGalaxyCatalogFromMaster(config: str):
     footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
     del footprint
 
-    print(f"# loading catalog {input.master_fname()}...")
+    fname = filenames.master(input)
+    print(f"# loading catalog {fname}...")
 
     # input raw catalog
-    with DefaultCatalogRead(input.master_fname()) as cat_file:
+    with DefaultCatalogRead(fname) as cat_file:
         cat = cat_file["catalog"]
 
     print("# selecting galaxies...")
@@ -89,7 +91,7 @@ def extractGalaxyCatalogFromMaster(config: str):
 
     del cat
 
-    fname = input.flagcat_fname()
+    fname = filenames.flagcat(input)
 
     print(f"# writing file {fname}")
     with DefaultCatalogWrite(fname) as out:

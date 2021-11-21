@@ -21,22 +21,13 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
     from os import path
     import healpy as hp
     from scipy.ndimage import gaussian_filter1d
-    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    from .. import filenames
     import sys
 
     print(f"# Running dndz.py with {config}")
 
     input = readConfig(config)
-
-    fname = input.galcat_fname(myrun)
-    print(f"# loading catalog {fname}...")
-
-    if not path.exists(fname):
-        print("ERROR: galaxy catalog {} does not exist".format(fname))
-        sys.exit(1)
-
-    with DefaultCatalogRead(fname) as store:
-        cat = store["catalog"]
 
     # loads the survey footprint in equatorial coordinates
     footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
@@ -75,11 +66,11 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
         for myrun in np.arange(input.pinocchio_first_run,input.pinocchio_last_run+1):
    
    
-           fname=input.galcat_fname(myrun)
-           print("# loading catalog {}...".format(fname))
+           fname=filenames.galcat(input, myrun)
+           print(f"# loading catalog {fname}...")
            
            if not path.exists(fname):
-               print("ERROR: galaxy catalog {} does not exist".format(fname))
+               print(f"ERROR: galaxy catalog {fname} does not exist")
                sys.exit(-1)
    
            with DefaultCatalogRead(fname) as store:
@@ -90,19 +81,34 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
            print("# Processing catalog...")
    
            # Histogram
-           isCen    = cat['kind']==0
+           isCen    = cat['kind'][mysel]==0
            if Ngal is None:
-               Ngal  = (np.histogram(cat[input.redshift_key], bins=ztab)[0]).astype(np.float64)
-               Ncen  = (np.histogram(cat[input.redshift_key][isCen], bins=ztab)[0]).astype(np.float64)
+               Ngal  = (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(np.float64)
+               Ncen  = (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(np.float64)
            else:
-               Ngal += (np.histogram(cat[input.redshift_key], bins=ztab)[0]).astype(np.float64)
-               Ncen += (np.histogram(cat[input.redshift_key][isCen], bins=ztab)[0]).astype(np.float64)
+               Ngal += (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(np.float64)
+               Ncen += (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(np.float64)
    
         Ngal = (Ngal/float(nruns)).astype(float)
         Ncen = (Ncen/float(nruns)).astype(float)
     else: 
-   
+
+        fname=filenames.galcat(input, myrun)
+        print("# loading catalog {}...".format(fname))
+
+        with DefaultCatalogRead(fname) as store:
+            cat = store['catalog']
+
         # selection
+        if input.selection_data_tag is not None:
+            myfname=filenames.selection_data(input,input.pinocchio_first_run)
+            print(f"# loading selection {}...".format(myfname))
+            with DefaultCatalogRead(sel_fname) as store:
+                mysel=store["SELECTION"]["SELECTION"]
+        else:
+            mysel = np.ones(len(cat),dtype=bool)
+
+
         if input.selection_data_tag is not None:
             print("# loading selection {}...".format(input.selection_data_fname(myrun)))
             with DefaultCatalogRead(input.selection_data_fname()) as store:
@@ -111,15 +117,15 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
             mysel = np.ones(len(cat), dtype=bool)
     
         print("# Processing catalog...")
-    
+
         # Histogram
-    
-        Ngal = np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]
-        isCen = cat["kind"][mysel] == 0
-        Ncen = np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]
+
+        Ngal     = (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(float)
+        isCen    = cat['kind'][mysel]==0
+        Ncen     = (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(float)
 
     ## Writes on file
-    fname = input.dndz_fname(r1=input.pinocchio_first_run,r2=input.pinocchio_last_run)
+    fname = filenames.dndz(input)
     print("# Writing results on file {}...".format(fname))
 
     with DefaultCatalogWrite(fname) as store:
@@ -128,16 +134,16 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
             shape=(Ngal.size,),
             dtype=[
                 ("N_gal", int),
-                ("N_gal_gaus", np.float),
+                ("N_gal_gaus", np.float32),
                 ("N_cen", int),
-                ("N_cen_gaus", np.float),
-                ("z_center", np.float),
-                ("z_lower", np.float),
-                ("z_upper", np.float),
-                ("bin_center", np.float),
-                ("bin_lower", np.float),
-                ("bin_upper", np.float),
-                ("bin_volume", np.float),
+                ("N_cen_gaus", np.float32),
+                ("z_center", np.float32),
+                ("z_lower", np.float32),
+                ("z_upper", np.float32),
+                ("bin_center", np.float32),
+                ("bin_lower", np.float32),
+                ("bin_upper", np.float32),
+                ("bin_volume", np.float32),
             ],
         )
 

@@ -7,7 +7,7 @@ from ..config import readConfig
 
 
 @register_tool
-def createFullOctantFootprint(outdir: str = "Products") -> None:
+def createFullOctantFootprint(outdir: str = "Repo") -> None:
     import numpy as np
     import matplotlib
 
@@ -54,7 +54,7 @@ def createFullOctantFootprint(outdir: str = "Products") -> None:
     foot2[footprint] *= 2
     # hp.mollview(footprint.astype(int)+reddening,max=100)
     hp.mollview(foot2, max=1000)
-    plt.savefig(path.join(outdir, "Plots", "FullOctant.png"))
+    plt.savefig(path.join(outdir, "Footprints", "FullOctant.png"))
 
     # writes footprint on fits file
     print("## writing footprint on file {}".format(footprint_fname))

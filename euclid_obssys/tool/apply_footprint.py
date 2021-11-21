@@ -12,7 +12,8 @@ def applyFootprintToMaster(config: str) -> None:
     import healpy as hp
     import sys
     from os import path
-    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    from ..filenames import build_fname
 
     #
     # TO DO: INSERT ROTATION AND REPORT IT IN THE FOOTPRINT
@@ -25,7 +26,7 @@ def applyFootprintToMaster(config: str) -> None:
 
     # input raw catalog
     with DefaultCatalogRead(
-        input.build_fname("RawCatalogs", [input["query"], None])
+        build_fname(input, "RawCatalogs", ["query"], RepoDirectory=True, skip_tags=False)
     ) as cat_file:
         cat = cat_file[1]
 
@@ -60,7 +61,8 @@ def applyFootprintToMaster(config: str) -> None:
 
     print(f"# Nextract={Nextract}")
 
-    with DefaultCatalogWrite(input.master_fname()) as store:
+    master_fname = build_fname('RawCatalogs',[query,footprint_tag])
+    with DefaultCatalogWrite(master_fname) as store:
 
         extract = store.new_array("catalog", shape=(Nextract,), dtype=cat.dtype)
 
