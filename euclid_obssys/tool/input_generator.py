@@ -4,18 +4,20 @@ from . import register_tool
 @register_tool
 def generateConfig(
     o: str,
+    repodir: str,
+    projectdir: str,
     lf_model: int = 1,
     rsd: bool = False,
-    outdir: str = None,
     type: str = "sdhod",
     footprintTag: str = None,
 ) -> None:
     """This generate a configuration file for the Euclid Observational systematics pipeline.
 
     Args:
+        repodir (str): Repository directory of Euclid data. 
+        projectdir (str): Name of the directory holding Project data.
         lf_model (int, optional): Luminosity function model to be adopted.
         rsd (bool, optional): Whether redshift space distortions must be applied. Defaults to False.
-        outdir (str, optional): Output directory. Defaults to the current working directory.
         o (str): [description]. Output configuration file Defaults to None.
         footprintTag (str): footprint to use , e.g. "100sqdeg"
         type (str, optional): Type of mock catalog to generate. Must be one of
@@ -37,14 +39,15 @@ def generateConfig(
     if not type in ["sdhod", "flagship", "pinocchio", "box"]:
         raise ValueError("Invalid catalog type")
 
-    if outdir is None:
-        outdir = os.getcwd()
+    if repodir is None:
+        repodir = os.getcwd()
 
     if o is None:
         raise ValueError("Missing output file")
 
     replacements = {
-        "OUTDIR": outdir,
+        "REPODIR": repodir,
+        "PROJECTDIR": projectdir,
         "FOOTTAG": f'"{footprintTag}"' if not footprintTag is None else "None",
         "LFMODEL": repr(lf_model),
         "CATTYPE": type,

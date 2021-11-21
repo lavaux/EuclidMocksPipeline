@@ -15,7 +15,7 @@ from os import path
 import sys
 
 # directory where products are stored, absolute path
-repo = "OUTDIR"
+repo = "REPODIR"
 projet = "PROJECTDIR"
 
 # master catalog queried from Cosmohub
