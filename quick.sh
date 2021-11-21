@@ -11,14 +11,16 @@ FOOTPRINT="createFootprint"
 CONFIG=myconf.py
 
 if false; then
-$BASETOOL generateConfig $CONFIG --footprintTag=100sqdeg --outdir=$(pwd)/Products
+$BASETOOL generateConfig $CONFIG --footprintTag=100sqdeg --repodir=$(pwd)/Repo --projectdir=TestProject
 ## these are typically not used in a production pipeline but are run only once
 $BASETOOL $FOOTPRINT                # create catalog footprint
 
 # these are the main scripts to be used in a pipeline
+fi
 
 
 $BASETOOL applyFootprintToMaster $CONFIG   # produces a smaller (rotated?) master
+exit 0
 $BASETOOL extractGalaxyCatalogFromMaster $CONFIG  # extracts a galaxy catalog from the master
 $BASETOOL createIndicesForSats $CONFIG      # must be run on a master to measure the SDHOD
 $BASETOOL createSmoothHOD $CONFIG     # measures the HOD from a flagship master
@@ -26,7 +28,6 @@ $BASETOOL createSmoothHOD $CONFIG     # measures the HOD from a flagship master
 
 $BASETOOL createSDHOD_Catalog $CONFIG              # creates an SDHOD galaxy catalog from a halo catalog
 
-fi
 $BASETOOL dN_dZ $CONFIG                            # measures the n(z) of a galaxy catalog
 $BASETOOL createRandom $CONFIG                  # creates the random (before selection)
 

@@ -36,7 +36,7 @@ def createFootprint(outdir: str = "Repo") -> None:
         hp.read_map(
             path.join(
                 outdir,
-                "ExtinctionMaps/COM_CompMap_ThermalDust-commander_2048_R2.00.fits",
+                "ExtinctionMaps/HFI_CompMap_ThermalDustModel_2048_R1.20.fits",
             ),
             field=2,
         ),

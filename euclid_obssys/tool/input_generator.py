@@ -39,8 +39,7 @@ def generateConfig(
     if not type in ["sdhod", "flagship", "pinocchio", "box"]:
         raise ValueError("Invalid catalog type")
 
-    if repodir is None:
-        repodir = os.getcwd()
+    projectdir = os.path.abspath(projectdir)
 
     if o is None:
         raise ValueError("Missing output file")
@@ -57,7 +56,8 @@ def generateConfig(
         "RSDFLAG": repr(rsd),
     }
 
-    print("Output directory is {}".format(outdir))
+    print(f"Repo directory is {repodir}")
+    print(f"Project directory is {projectdir}")
 
     for k, v in replacements.items():
         input_template = re.sub(k, v, input_template)

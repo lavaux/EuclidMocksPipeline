@@ -9,14 +9,14 @@ import astropy.units as u
 from scipy.integrate import quad
 import importlib
 import healpy as hp
-import pozzettiLF
+import euclid_obssys.pozzettiLF as pozzettiLF
 from astropy.io import fits
 from os import path
 import sys
 
 # directory where products are stored, absolute path
 repo = "REPODIR"
-projet = "PROJECTDIR"
+project = "PROJECTDIR"
 
 # master catalog queried from Cosmohub
 query = '8614'
@@ -130,9 +130,9 @@ ngrid = 512
 ###############################################
 
 # check that repo and project end with /
-if repo[-1] is not '/':
+if repo[-1] != '/':
     repo += '/'
-if project[-1] is not '/':
+if project[-1] != '/':
     project += '/'
 
 # applying data selection to the construction of random
@@ -140,7 +140,7 @@ if (apply_dataselection_to_random) & (selection_data_tag is not None):
     selection_random_tag = 'DS'+selection_data_tag
 
 # sets all pinocchio variables to None if pinocchio runs are not used
-if cat_type is not 'pinocchio':
+if cat_type != 'pinocchio':
     pinocchio_repo=None
     pinocchio_kernel=None
     pinocchio_rotator=None

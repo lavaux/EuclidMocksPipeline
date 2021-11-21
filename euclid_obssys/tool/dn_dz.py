@@ -102,7 +102,7 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
         # selection
         if input.selection_data_tag is not None:
             myfname=filenames.selection_data(input,input.pinocchio_first_run)
-            print(f"# loading selection {}...".format(myfname))
+            print(f"# loading selection {myfname}...")
             with DefaultCatalogRead(sel_fname) as store:
                 mysel=store["SELECTION"]["SELECTION"]
         else:
