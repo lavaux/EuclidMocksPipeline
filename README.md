@@ -1,4 +1,5 @@
 # Pipeline for processing dark matter halo and galaxy mocks in Euclid
+# V0.3
 
 ## Starting point:
 Query 8614 of the Flagship mock, obtained as follows:
@@ -11,24 +12,35 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
         AND `y_gal` >= 0
         AND `x_gal` >= 0
 
+## Repository and project: 
+Some files of general use are in the Repo/ directory, while files
+produced by the pipeline are found in subdirectories of a project
+directory, defined in the input file (see below). The script
+createProjectDirectoryTree.py creates a project tree directory. To run
+it:
+> python createProjectDirectoryTree.py [project name]
+
 ## Directory Tree:
 [root]/Pipeline                        # code
-[root]/Products
+[root]/Repo
                /RawCatalogs            # Cosmohub query with various footprints applied
                /Footprints             # survey footprints (see below)
                /ExtinctionMaps         # extinction and reddening maps from various sources
                /SDHOD                  # Stripped-down HOD versions
+	       /LookUpTable            # lookup table to bypass realistic galaxy selection
+	       /SelectionInputs        # selection input files
+[root]/[project]
                /GalaxyCatalogs         # complete galaxy catalogs
                /RandomCatalogs         # complete random catalogs
                /Selections             # selections to be applied to galaxy catalogs
-	       /LookUpTable            # look-up table to bypass realistic galaxy selection
                /Catalogs4LE3           # catalogs readable by LE3 PFs, in redshift slices
                /NumberCounts           # galaxy counts
                /Cls                    # angular maps and angular clustering measurements
-               /PkParams               # parameter files for PK code
-               /PkScripts              # scripts to run the PK code
-               /Pks                    # measured PKs
                /Plots                  # various plots
+for each estimator (2PCF, 3PCF, CM-2PCF, PK, BK, CM-PK):
+               /[estimator]/Params     # parameter files (and product lists for CM-*)
+               /[estimator]/Scripts    # scripts to run the estimator
+               /[estimator]/Measures   # measured quantities
 
 ## Definitions:
 
@@ -41,16 +53,22 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
   that are/are not observed, in galactic coordinates, and a redshift
   range of validity. It is defined by a footprint_tag in the input
   file. The original Flagship octant is defined by footprint_tag=None.
-  The footprint is read by the read_footprint() function defined in
-  the input file, that returns the healpy resolution of the map, the
-  redshift range in which the footprint is defined, the fraction of
-  the sky covered by the survey and the footprint itself.
+  The footprint is read by the input.read_footprint() function defined
+  in the input file, that returns the healpy resolution of the map,
+  the redshift range in which the footprint is defined, the fraction
+  of the sky covered by the survey and the footprint itself.
 
   NOTE: it is assumed below that sky coordinates are ALWAYS galactic.
 
 * Master catalog: a catalog containing information on all dark matter
-  halos and its central/satellite galaxies, coming from a CosmoHub
-  query, or from applying a footprint on a Cosmohub query.
+  halos and their central/satellite gal
+
+axies, coming from a CosmoHub
+  query, or from applying a footprint on a Cosmohub query.x
+
+* SDHOD: the pipeline can create a stripped-down HOD version of the
+  Flagship HOD, that is used to populate sets of DM halos in the
+  lightcone, both from Flagship and Pinocchio.
 
 * Galaxy catalog: a catalog that contains only galaxies subject to a
   basic selection, like Halpha flux > 2e-16 erg/cm^2/s. The basic
@@ -72,36 +90,55 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
   - central / satellite: central or satellite galaxies;
   - extinction: galaxies are selected accorting to their extincted
     flux;
-  - visibilitymask: a boolean visibility mask is applied to the catalog.
-  - lookup: a lookup table is used to determine what galaxies are 
-    detected.
+  - visibilitymask: galaxies are selected in flux using a healpy map
+    giving the flux limit in each pixel;
+  - lookup: a lookup table, giving the detection probability as a
+    function of flux, redshift, exposure time, noise level and MW
+    extinction, is used to determine what galaxies are detected.
+
   A selection is defined by a tag specified in the input file, and
   requires a separate sel_input_[tag].py file to be created. It can be
   applied to a galaxy or a random catalog. The input file specifies
   two selection tags, selection_data_tag for the galaxy catalog and
-  selection_random_tag for the random.
+  selection_random_tag for the random. For systematics, applying the
+  same selection to the data and to the corresponding random catalog
+  will give a perfect mitigation of the systematics. Because selection
+  changes the number density, the case of no mitigation will be
+  obtained by creating a random based on the data catalog after
+  applying the selection, not by using the parent random catalog.
 
 * Random catalog: it is created by (randomly) replicating the data
-  catalog alpha times in redshift and flux, and by distributing
-  galaxies uniformly on the sky (within the footprint). It assumed to
-  be unmodulated on the sky. It can follow a specific number density
-  if required **TO BE IMPLEMENTED**.
+  catalog (with or without applying a selection) alpha times in
+  redshift and flux, and by distributing galaxies uniformly on the sky
+  (within the footprint). Its number density thus depends only on
+  redshift. A random with modulated number density is obtained by
+  applying a selection to it. **TO BE IMPLEMENTED**: Instead of having
+  exactly the same fluctuations in number density (measured in bins of
+  0.01 width in redshift), the random can follow a smoothed version of
+  the data number density.
 
 * Catalogs for LE3: these are extracted from galaxy and random
-  catalogs, give galaxies in specified redshift bins, and are readable
-  by LE3 codes.
+  catalogs, with selections applied as needed, in a sequence of
+  redshift bins as specified in the input file, and are readable by
+  LE3 codes.
 
 * Pinocchio light cones: the pipeline can process a set of pinocchio
-  light cones. In this case it will be possible to compute the galaxy
-  number density averaged over the mocks, and a random that follows
-  this averaged number density.
+  light cones. In this case it is possible to compute the galaxy
+  number density as the average over a set of mocks, and a random will
+  follow this averaged number density.
 
 ## Preliminary scripts:
+
+* createProjectDirectoryTree.py: it creates the directory tree for a
+  project, and copies the selection input files from the repository to
+  the Selections/ directory where they are expected to be found;
+  indeed, one may want to edit them.
 
 * createIndicesForSats.py: must be run on a master catalog to create
   pointers of satellite galaxies to their main halo in that catalog.
   They are needed to create the SDHOD. This script must be edited to
-  type in the name of the master catalog.
+  type in the name of the master catalog. Most likely, it will be run
+  only once on the main master.
 
 * createFullOctantFootprint.py: creates a survey footprint for the
   Flagship octant.
@@ -113,7 +150,7 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
 
 * applyFootprintToMasterCatalog.py [input file]: it applies a
   footprint to the master catalog, extracting another (smaller) master
-  catalog.
+  catalog that goes in the Repo/ directory.
 
 ## Galaxy catalogs from master:
 
@@ -121,7 +158,7 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
   catalog from a master catalog by applying the standard flux limit,
   according to the model. It must be run separately for each model.
 
-## Stripped-Down HOD from master:
+## Creation of the Stripped-Down HOD from master:
 
 * createSmoothHOD.py [input file]: based on a master file, it measures
   the HOD curves and smooths them in redshift. It should be run on the
@@ -141,39 +178,52 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
   light cones with galaxies, using the SDHOD, including standard
   recipes to distribute satellites in halos. A calibration of halo
   masses is applied, to match them to the Flagship catalog either in
-  abundance or in clustering amplitude.
+  abundance or in clustering amplitude. Here the first and last runs
+  are not taken from the input file but provided as an argument, to
+  guaranteee more flexibility.
 
 ## Random catalog
 
-* dndz.py [input file]: given a galaxy catalog, it measures the number
-  density of its galaxies (number of galaxies brighter than the flux
-  limit in each redshift interval as a function of redshift). This is
-  needed to create the random catalog. It also provides number
-  densities smoothed in redshift. It accepts application of a
-  selection as an option, though the random catalog will typically be
-  created with the dndz of the unselected data catalog.
-
 * createRandom.py [input file]: it creates a random for the galaxy
-  catalog, with abundace alpha times the data catalog, alpha as
-  specified in the input catalog. TO BE IMPLEMENTED: on request it can
-  follow a specified galaxy number density.
+  catalog (see the explanation above), with abundance alpha times the
+  data catalog, alpha as specified in the input catalog. If
+  apply_dataselection_to_random is set to True, it applies a selection
+  to data catalog before replicating it, so as to obtain a random that
+  follows the catalog after selection but has a mean density constant
+  in time (resulting in no mitigation of the systematics). In case of
+  a set of mocks, a sequence of integers is created, as long as the
+  number of mocks, that sums up to the alpha value specified in the
+  input file and says how many times a mock will be replicated. This
+  implies that the number of random galaxy is not exactly the
+  (average) number of data galaxies times alpha, but this is not a
+  problem for the estimators. **TO BE IMPLEMENTED**: On request it can
+  follow a smoothed version of the galaxy number density.
 
 ## Selection
 
-* createSelection.py [input file] [random]: creates a selection for a
-  galaxy or a random catalog; the second option is chosen if "random"
-  or "1" is provided when calling the script. The parameters of the
+* createSelection.py [input file] [run number / random]: creates a
+  selection for a galaxy or a random catalog. The second option is set
+  to the run number when a set of pinocchio mocks is processed
+  (selections must be produced catalog by catalog) or to the string
+  'random' to create a selection for the random. The parameters of the
   selection are specified in the sel_input_[input.selection_tag].py,
   where selection_tag is given in the input file.
 
 ## Measurements of galaxy catalogs:
 
-* writeCatalogs4LE3.py [input file]: given a selection, it writes
-  galaxy and random catalogs in redshift shells, in files that are
-  readable by LE3 processing functions.
+* dndz.py [input file]: given a galaxy catalog (possibly with a
+  selection), it measures the number density of its galaxies in
+  redshift bins of delta z=0.01. It also provides number densities
+  smoothed in redshift.
 
-* createPkScripts.py [input file]: creates the parameter files and the
-  scripts needed to run the LE3 PK code.
+* writeCatalogs4LE3.py [input file]: it writes galaxy and random
+  catalogs (with selections as requested) in a sequence redshift bins
+  as specified in the input, in files that are readable by LE3
+  processing functions.
+
+* create[estimator]Scripts.py [input file]: creates the parameter
+  files and the scripts needed to run the LE3 estimator code.
+  Currently provided scripts are for PK, 2PCF, CM-PK.
 
 * numbercounts.py [input file]: given a data catalog and a selection,
   it measures the differential number counts (number of galaxies per
@@ -186,6 +236,9 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
   THIS IS STILL WORK IN PROGRESS
 
 ## Plots
+
+All the scripts below should be considered as example script to
+produce the wanted plots.
 
 * visualizeHOD.py [input file]: plots the Ncen(Mh,z) and Nsat(Mh,z)
   curves for the SDHOD.
@@ -208,10 +261,8 @@ SELECT `ra_gal`, `dec_gal`, `x_gal`, `y_gal`, `z_gal`, `vx_gal`, `vy_gal`, `vz_g
   intervals. It is easy to edit the script to plot two sets of curves.
   THIS IS STILL WORK IN PROGRESS
 
-* angular_map.py [filename] [selection] [zmin] [zmax]: reads the
-  galaxy or random catalog specified in the command line argument, its
-  selection ('None' to skip this) and plots its angular map of density
-  contrast (with Nside=256) in the specified redshift interval. Very
-  useful for quick checks of what a catalog is like.
 
+## Working Example
 
+Please see the Example/ directory in Pipeline/ for a complete
+description of a full working example.

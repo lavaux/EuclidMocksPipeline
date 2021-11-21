@@ -8,6 +8,7 @@ from matplotlib import gridspec
 import numpy as np
 import healpy as hp
 import sys
+import filenames
 
 if len(sys.argv)<2:
     print("Usage: pyton {} [my input file]".format(sys.argv[0]))
@@ -29,7 +30,7 @@ if not input.PLOT:
 labd='lookup'
 labs='complete'
 second_dndz_fname=None
-#second_dndz_fname=input.outdir+'NumberCounts/dndz_flagship_8614_BenSC8_m3_smL5_truez.fits'
+#second_dndz_fname=input.project+'NumberCounts/dndz_flagship_8614_BenSC8_m3_smL5_truez.fits'
 CHECK_WITH_RANDOM=True
 COMPLETENESS=True
 
@@ -39,12 +40,12 @@ sky_coverage=input.sqdegonthesky * sky_fraction
 print("This survey covers {} sq deg".format(sky_coverage))
 del footprint
 
-fname = input.dndz_fname(input.pinocchio_first_run, input.pinocchio_last_run)
+fname = filenames.dndz(input)
 print("Reading dndz from file {}".format(fname))
 dndz=fits.getdata(fname)
 
 fig=plt.figure(figsize=(8, 8))
-plt.suptitle(input.exclude_dir(fname))
+plt.suptitle(filenames.exclude_dir(fname))
 
 gs = gridspec.GridSpec(2, 1, height_ratios=[2.5, 1], hspace=0)
 
@@ -98,16 +99,16 @@ if second_dndz_fname is not None:
 
 
 if CHECK_WITH_RANDOM:
-    print("Reading random catalog {}...".format(input.random_fname()))
-    random = fits.getdata(input.random_fname())
+    print("Reading random catalog {}...".format(filenames.random(input)))
+    random = fits.getdata(filenames.random(input))
 
     Ng=np.histogram(random[input.redshift_key], bins=ztab)[0]/sky_coverage/input.deltazbin/input.alpha
     panel1.plot(dndz['z_center'],Ng,'-.',label='from random',c='cyan')
     panel2.plot(dndz['z_center'][pos],Ng[pos]/Nmodel[pos],'-.',c='cyan')
 
     if (not input.apply_dataselection_to_random) & (input.selection_random_tag is not None):
-        print("Reading random selection {}...".format(input.random_fname()))        
-        sel = fits.getdata(input.selection_random_fname())['SELECTION']
+        print("Reading random selection {}...".format(filenames.selection_random(input)))        
+        sel = fits.getdata(filenames.selection_random(input))['SELECTION']
         Ng=np.histogram(random[input.redshift_key][sel], bins=ztab)[0]/sky_coverage/input.deltazbin/input.alpha
         panel1.plot(dndz['z_center'],Ng,'-.',label='random with selection',c='yellow')
         panel2.plot(dndz['z_center'][pos],Ng[pos]/Nmodel[pos],'-.',c='yellow')
@@ -120,8 +121,8 @@ panel1.legend()
 if input.SHOW:
     plt.show()
 
-plt.savefig(input.plot_dndz_fname())
-print("## written image in file {}".format(input.plot_dndz_fname()))
+plt.savefig(filenames.plot_dndz(input))
+print("## written image in file {}".format(filenames.plot_dndz(input)))
 
 if COMPLETENESS and second_dndz_fname is not None:
 

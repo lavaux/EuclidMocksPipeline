@@ -10,6 +10,7 @@ import utils
 from colossus.halo import concentration
 from scipy.stats import poisson
 import sys
+import filenames
 
 if len(sys.argv)<2:
     print("Usage: pyton {} [my input file]".format(sys.argv[0]))
@@ -32,11 +33,11 @@ SCALE_VELOCITIES = 0.7
 # seed for random numbers
 np.random.seed(seed=input.SEED_hod)
 
-print("# Reading the HOD table {}...".format(input.SDHOD_fname()))
-hodtable=fits.getdata(input.SDHOD_fname())
+print("# Reading the HOD table {}...".format(filenames.SDHOD(input)))
+hodtable=fits.getdata(filenames.SDHOD(input))
 
-print('# Reading the halo catalog from {}...'.format(input.master_fname()))
-rawcat = fits.getdata(input.master_fname())
+print('# Reading the halo catalog from {}...'.format(filenames.master(input)))
+rawcat = fits.getdata(filenames.master(input))
 
 c_kind     = rawcat['kind']
 c_z        = rawcat['true_redshift_gal']
@@ -196,7 +197,7 @@ for iz in np.arange(zbins.size-1):
     np.random.shuffle(extract)
     shuffled_log10f[ff] = extract
 
-fname=input.hodcat_fname()
+fname=filenames.hodcat(input)
 print("# Saving the catalog to file {}".format(fname))
 catalog = np.empty(Ngal,
               dtype=[('x_gal', np.float), ('y_gal', np.float), ('z_gal', np.float),

@@ -8,6 +8,7 @@ import healpy as hp
 from scipy.ndimage import gaussian_filter1d
 import sys
 from os import path
+import filenames
 
 
 if len(sys.argv)<2:
@@ -48,46 +49,52 @@ if (input.cat_type is 'pinocchio') & (input.pinocchio_last_run is not None):
     nruns=input.pinocchio_last_run-input.pinocchio_first_run +1
     for myrun in np.arange(input.pinocchio_first_run,input.pinocchio_last_run+1):
 
-        fname=input.galcat_fname(myrun)
-        print("# loading catalog {}...".format(fname))
+        myfname=filenames.galcat(input,myrun)
+        print("# loading catalog {}...".format(myfname))
         
-        if not path.exists(fname):
-            print("ERROR: galaxy catalog {} does not exist".format(fname))
+        if not path.exists(myfname):
+            print("ERROR: galaxy catalog {} does not exist".format(myfname))
             sys.exit(-1)
 
-        cat = fits.getdata(fname)
+        cat = fits.getdata(myfname)
 
-        # NB: no selection is applied to pinocchio mocks
+        if input.selection_data_tag is not None:
+            myfname=filenames.selection_data(input,myrun)
+            print("# loading selection {}...".format(myfname))
+            mysel = fits.getdata(myfname)['SELECTION']
+        else:
+            mysel = np.ones(len(cat),dtype=bool)
 
         print("# Processing catalog...")
 
         # Histogram
-        isCen    = cat['kind']==0
+        isCen    = cat['kind'][mysel]==0
         if Ngal is None:
-            Ngal  = (np.histogram(cat[input.redshift_key], bins=ztab)[0]).astype(np.float64)
-            Ncen  = (np.histogram(cat[input.redshift_key][isCen], bins=ztab)[0]).astype(np.float64)
+            Ngal  = (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(np.float64)
+            Ncen  = (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(np.float64)
         else:
-            Ngal += (np.histogram(cat[input.redshift_key], bins=ztab)[0]).astype(np.float64)
-            Ncen += (np.histogram(cat[input.redshift_key][isCen], bins=ztab)[0]).astype(np.float64)
+            Ngal += (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(np.float64)
+            Ncen += (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(np.float64)
 
     Ngal = (Ngal/float(nruns)).astype(float)
     Ncen = (Ncen/float(nruns)).astype(float)
 
 else:
 
-    fname=input.galcat_fname(input.pinocchio_first_run)
-    print("# loading catalog {}...".format(fname))
+    myfname=filenames.galcat(input,input.pinocchio_first_run)
+    print("# loading catalog {}...".format(myfname))
 
-    if not path.exists(fname):
-        print("ERROR: galaxy catalog {} does not exist".format(fname))
+    if not path.exists(myfname):
+        print("ERROR: galaxy catalog {} does not exist".format(myfname))
         sys.exit(-1)
 
-    cat = fits.getdata(fname)
+    cat = fits.getdata(myfname)
 
     # selection
     if input.selection_data_tag is not None:
-        print("# loading selection {}...".format(input.selection_data_fname()))
-        mysel = fits.getdata(input.selection_data_fname())['SELECTION']
+        myfname=filenames.selection_data(input,input.pinocchio_first_run)
+        print("# loading selection {}...".format(myfname))
+        mysel = fits.getdata(myfname)['SELECTION']
     else:
         mysel = np.ones(len(cat),dtype=bool)
 
@@ -101,8 +108,8 @@ else:
     Ncen     = (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(float)
 
 ## Writes on file
-fname = input.dndz_fname(r1=input.pinocchio_first_run,r2=input.pinocchio_last_run)
-print("# Writing results on file {}...".format(fname))
+myfname = filenames.dndz(input)
+print("# Writing results on file {}...".format(myfname))
 
 dndz = np.empty(Ngal.size,
                          dtype=[('N_gal', float), ('N_gal_gaus', float), 
@@ -121,6 +128,6 @@ dndz['z_center'] = (ztab[1:] + ztab[:-1])/2; dndz['z_lower'] = ztab[:-1]; dndz['
 dndz['N_gal_gaus'] = gaussian_filter1d(Ngal, input.smoothing_length);
 dndz['N_cen_gaus'] = gaussian_filter1d(Ncen, input.smoothing_length);
 
-fits.writeto(fname, dndz, overwrite=True)
+fits.writeto(myfname, dndz, overwrite=True)
 
 print("# done!")

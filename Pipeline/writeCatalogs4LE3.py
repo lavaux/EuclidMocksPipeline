@@ -7,6 +7,9 @@ from fitsio import FITS, FITSHDR
 import numpy as np
 import sys
 import healpy as hp
+# import lxml.etree
+# import lxml.builder
+import filenames
 
 if len(sys.argv)<2:
     print("Usage: pyton {} [my input file]".format(sys.argv[0]))
@@ -19,9 +22,82 @@ except ModuleNotFoundError:
     sys.exit(0)
 
 
+
+# def write_xml(xml_info, out_name) :
+#     '''write XML product associated to SEL-ID selected catalog
+#     @par xml_info: dict with XML tags info
+#     @par out_name: name and path of output xml file'''
+
+#     def ATTR(key, value):
+#         '''Utility to generate a single key-value dict to be used ad elemet attribute'''
+#         return {key: value}
+
+
+#     # get base product element with namespect and alias
+#     PROD = lxml.builder.ElementMaker(namespace='http://euclid.esa.org/schema/dpd/le3/id/sel/out/subsampledcatalog',
+#                                             nsmap={'subcat':'http://euclid.esa.org/schema/dpd/le3/id/sel/out/subsampledcatalog'}).PROD
+
+#     # generic elemen builder
+#     E = lxml.builder.ElementMaker()
+
+#     # write all XML following structure
+#     xml = PROD(
+#         E.Header(
+#         E.ProductId(xml_info['prod_id']),
+#         E.ProductType('DpdLE3IDSELIDSubsampledCatalog'),
+#         E.SoftwareName('Mock'),
+#         E.SoftwareRelease('None'),
+#         E.ProdSDC('SDC-IT'),
+#         E.DataSetRelease(xml_info['release']),
+#         E.Purpose('TEST'),
+#         E.PlanId('None'),
+#         E.PPOId('None'),
+#         E.PipelineDefinitionId('None'),
+#         E.PipelineRun('None'),
+#         E.ExitStatusCode('OK'),
+#         E.ManualValidationStatus('VALID'),
+#         E.Curator('OU-LE3'),
+#         E.CreationDate(xml_info['date'])
+#         ),
+#         E.Data(
+#             E.SpatialCoverage(
+#                 E.Polygon(
+#                     E.Vertex(
+#                         E.Position(
+#                             E.C1('0'),
+#                             E.C2('0')
+#                         )
+#                     )
+#                 )
+#             ),
+#             E.CatalogDescription(
+#                 E.CatalogOrigin(xml_info['catalog_XML_type']),
+#                 E.CatalogType('PROXY'),  # NOT_PROXY if real observations
+#                 E.PathToCatalogFile(),
+#                 E.CatalogName(xml_info['cat_name'])
+#             ),
+#             E.Catalog(ATTR('format','le3.id.catalog.selected'), ATTR('version','0.1'),
+#                 E.DataContainer(ATTR('filestatus','PROPOSED'),
+#                     E.FileName(xml_info['file_name'])
+#                 )
+#             ),
+#             E.Selection(xml_info['selection'])  
+#         )
+#     )
+
+#     # finalize and write to file
+#     with open(out_name, 'wb') as out :
+#         #cleanup
+#         clean_xml_stream = lxml.etree.tostring(xml, pretty_print=True, xml_declaration=True, encoding='utf-8')
+#         # write as b-stream
+#         out.write(clean_xml_stream)
+# # ---------------------------------------------------------------------------- #
+
+
+
+
 def write_catalog(fname, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_EQUATORIAL"):
     if format=="txt":
-        
         np.savetxt(fname, np.transpose( [x, y, z, w] ) )
 
     elif format=="fits":
@@ -51,6 +127,20 @@ def write_catalog(fname, x, y, z, w, type="DATA", format="fits", coord="PSEUDO_E
                            "CAT_ID"  : "MOCK",
                            "COORD"   : coord,
                            "ANGLE"   : "DEGREES"}
+
+        # fname_nodir = fname[[pos for pos, char in enumerate(fname) if char == '/'][-1]+1:]
+        # zshell = fname[fname.find('zshell'):-5]
+        # header_keywords = {'TELESCOP' : 'EUCLID  ',
+        #                    'INSTRUME' : 'LE3IDSELID',
+        #                    'FILENAME' : fname_nodir,
+        #                    'CAT_TYPE' : type,
+        #                    'CAT_NAME' : 'MOCK-LE3GC',
+        #                    'CAT_NOBJ' : x.size,
+        #                    'COORD   ' : 'EQUATORIAL',
+        #                    'ANGLE   ' : 'DEG     ',
+        #                    'COMPLETE' : 1.0,
+        #                    'PURITY  ' : 1.0,
+        #                    'SELECT  ' : zshell}
 
         extension="CATALOG"
 
@@ -162,17 +252,17 @@ if input.cat_type is 'pinocchio':
 else:
     n1=n2=0
 
-fname = input.dndz_fname(r1=r1,r2=r2)
+fname = filenames.dndz(input)
 print("# Reading dndz from {}".format(fname))
 dndz = astrofits.getdata(fname)
 
 # you can skip the writing of the random
 if input.WriteLE3Random:
-    print("# reading random catalog {}...".format(input.random_fname()))
-    randomcat = astrofits.getdata(input.random_fname())
+    print("# reading random catalog {}...".format(filenames.random(input)))
+    randomcat = astrofits.getdata(filenames.random(input))
 
     if (not input.apply_dataselection_to_random) & (input.selection_random_tag is not None):
-        fname=input.selection_random_fname()
+        fname=filenames.selection_random(input)
         print("# reading selection of random from file {}...".format(fname))
         selection = astrofits.getdata(fname)['SELECTION']
     else:
@@ -188,8 +278,8 @@ if input.WriteLE3Random:
         print("# computing weights...")
         density = np.interp(randomcat[input.redshift_key][sel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
 
-        print("# writing random file {}".format(input.LE3_random_fname(zmin,zmax)))
-        write_catalog(input.LE3_random_fname(zmin,zmax),
+        print("# writing random file {}".format(filenames.LE3_random(input,zmin,zmax)))
+        write_catalog(filenames.LE3_random(input,zmin,zmax),
                       randomcat['ra_gal'][sel], randomcat['dec_gal'][sel], 
                       randomcat[input.redshift_key][sel],
                       density, type = "RANDOM", format = 'fits')
@@ -203,12 +293,12 @@ else:
     toprocess=range(n1,n2+1)
 
 for myrun in toprocess:
-    fname=input.galcat_fname(myrun)
+    fname=filenames.galcat(input,myrun)
     print("# reading data catalog {}...".format(fname))
     cat = astrofits.getdata(fname)
     zused = cat[input.redshift_key]
     if input.selection_data_tag is not None:
-        fname = input.selection_data_fname(run=myrun)
+        fname = filenames.selection_data(input,myrun)
         print("# loading selection {}...".format(fname))
         selection = astrofits.getdata(fname)['SELECTION']
     else:
@@ -224,7 +314,7 @@ for myrun in toprocess:
         print("# computing weights...")
         density = np.interp(zused[mysel], dndz['z_center'], dndz['N_gal']/dndz['bin_volume'])
 
-        fname = input.LE3_data_fname(zmin,zmax,myrun)
+        fname = filenames.LE3_data(input,zmin,zmax,myrun)
         print("# writing data file {}".format(fname))
         write_catalog(fname, cat['ra_gal'][mysel], cat['dec_gal'][mysel], zused[mysel], 
                       density, type = "DATA", format = 'fits')

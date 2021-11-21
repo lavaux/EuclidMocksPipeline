@@ -8,6 +8,7 @@ import healpy as hp
 import sys
 import os
 from scipy.interpolate import RegularGridInterpolator
+import filenames
 
 def extinction_curve(z):
 
@@ -72,6 +73,7 @@ else:
 
 
 # load selection input
+sys.path.append(input.project + 'Selections')
 try: 
     sel_input = __import__(sel_input_fname,  globals(), locals(), [], 0)
 except ModuleNotFoundError:
@@ -88,11 +90,11 @@ for key in sel_input.selection_keys:
 
 # load galaxy catalog
 if use_data:
-    print("Opening galaxy catalog {}...".format(input.galcat_fname(myrun)))
-    cat  = fits.getdata(input.galcat_fname(myrun))
+    print("Opening galaxy catalog {}...".format(filenames.galcat(input,myrun)))
+    cat  = fits.getdata(filenames.galcat(input,myrun))
 else:
-    print("Opening random catalog {}...".format(input.random_fname()))
-    cat  = fits.getdata(input.random_fname())
+    print("Opening random catalog {}...".format(filenames.random(input)))
+    cat  = fits.getdata(filenames.random(input))
 
 Ngal = len(cat)
 
@@ -104,8 +106,9 @@ if 'lookup' in sel_input.selection_keys:
 
 # this option is alternative to extinction, visibilitymask, fluxcut
 
-    print("Loading lookup table {}".format(input.outdir + sel_input.lookup_table_fname))
-    lut = fits.getdata(input.outdir + sel_input.lookup_table_fname)
+    lut_fname=input.repo + sel_input.lookup_table_fname
+    print("Loading lookup table {}".format(lut_fname))
+    lut = fits.getdata(lut_fname)
 
     # THESE SHOULD BE IN THE HEADER...
     nred=14
@@ -141,7 +144,7 @@ if 'lookup' in sel_input.selection_keys:
 
         print("# applying extinction in lookup table...")
         conv      = np.pi/180.
-        fname = input.outdir + sel_input.extinctionmap_fname
+        fname = input.repo+sel_input.extinctionmap_fname
         print("# loading reddening map {}...".format(fname))
         reddening = hp.read_map(fname, field=sel_input.extinctionmap_field)
         if sel_input.extinctionmap_res != hp.npix2nside(reddening.size):
@@ -157,33 +160,35 @@ if 'lookup' in sel_input.selection_keys:
     # background noise
     if sel_input.lookup_noise_fname is None:
         print("# Background set to minimal")
-        background = xbkg[0] * np.ones(Ngal,dtype=np.float)  # minimal background
+        background = xbkg[0] * np.ones(Ngal,dtype=np.float32)  # minimal background
     else:
-        if os.path.isfile(input.outdir + sel_input.lookup_noise_fname):
-            print("# Reading noise map {}".format(input.outdir + sel_input.lookup_noise_fname))
-            noise_map = hp.read_map(input.outdir + sel_input.lookup_noise_fname,partial=True)
+        noise_fname=input.repo+sel_input.lookup_noise_fname
+        if os.path.isfile(noise_fname):
+            print("# Reading noise map {}".format(noise_fname))
+            noise_map = hp.read_map(noise_fname,partial=True)
             if pixels is None:
                 conv   = np.pi/180.
                 pixels = hp.ang2pix(sel_input.lookup_Nside, np.pi/2. - cat['dec_gal'][selection]*conv, cat['ra_gal'][selection]*conv)
             background = noise_map[pixels]
         else:
-            print("ERROR: noise map file {} not found".format(input.outdir + sel_input.lookup_noise_fname))
+            print("ERROR: noise map file {} not found".format(noise_fname))
             sys.exit(0)
 
     # exposure time
     if sel_input.lookup_exptime_fname is None:
         print("# Exposure map set to 4 exposures for all")
-        exposure   = 4.0 * one_exposure * np.ones(Ngal,dtype=np.float)   # four exposures
+        exposure   = 4.0 * one_exposure * np.ones(Ngal,dtype=np.float32)   # four exposures
     else:
-        if os.path.isfile(input.outdir + sel_input.lookup_exptime_fname):
-            print("# Reading exposure time map {}".format(input.outdir + sel_input.lookup_exptime_fname))
-            exptime_map = hp.read_map(input.outdir + sel_input.lookup_exptime_fname,partial=True)
+        exptime_fname=input.repo+sel_input.lookup_exptime_fname
+        if os.path.isfile(exptime_fname):
+            print("# Reading exposure time map {}".format(exptime_fname))
+            exptime_map = hp.read_map(exptime_fname,partial=True)
             if pixels is None:
                 conv   = np.pi/180.
                 pixels = hp.ang2pix(sel_input.lookup_Nside, np.pi/2. - cat['dec_gal'][selection]*conv, cat['ra_gal'][selection]*conv)
             exposure = exptime_map[pixels] * one_exposure
         else:
-            print("ERROR: exposure time map file {} not found".format(input.outdir + sel_input.lookup_exptime_fname))
+            print("ERROR: exposure time map file {} not found".format(exptime_fname))
             sys.exit(0)
 
     points = np.array([ background, exposure, my_flux, cat[input.redshift_key] ]).transpose()
@@ -203,7 +208,7 @@ if ('extinction' in sel_input.selection_keys) & ('lookup' not in sel_input.selec
 
     # THIS PROCESS MAY BE HEAVY FOR THE RANDOM CATALOG, WE MAY SPLIT IT INTO SEVERAL SECTIONS
 
-    fname = input.outdir + sel_input.extinctionmap_fname
+    fname = input.repo+sel_input.extinctionmap_fname
     print("# loading reddening map {}...".format(fname))
     reddening = hp.read_map(fname, field=sel_input.extinctionmap_field)
     if sel_input.extinctionmap_res != hp.npix2nside(reddening.size):
@@ -227,9 +232,10 @@ elif 'flux_limit' in sel_input.selection_keys:
 
 elif 'visibilitymask' in sel_input.selection_keys:
 
-    print("# applying visibility mask {}...".format(input.outdir + sel_input.selection_VM_fname))
+    VM_fname=input.repo+sel_input.selection_VM_fname
+    print("# applying visibility mask {}...".format(VM_fname))
 
-    VM = fits.getdata(input.outdir + sel_input.selection_VM_fname)['VM']
+    VM = fits.getdata(VM_fname)['VM']
     VM = hp.ud_grade(VM, sel_input.selection_VM_res)
 
     conv      = np.pi/180.
@@ -254,9 +260,9 @@ if use_data:
 
 
 if use_data:
-    fname = input.selection_data_fname(run=myrun)
+    fname = filenames.selection_data(input,myrun)
 else:
-    fname = input.selection_random_fname()
+    fname = filenames.selection_random(input)
 
 print("# Writing file {}...".format(fname))
 

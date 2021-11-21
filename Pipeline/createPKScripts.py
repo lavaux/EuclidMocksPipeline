@@ -5,6 +5,7 @@
 from string import Template
 from shutil import copyfile
 import numpy as np
+import filenames
 
 import sys
 if len(sys.argv)<2:
@@ -17,14 +18,12 @@ except ModuleNotFoundError:
     print("Usage: pyton {} [my input file]".format(sys.argv[0]))
     sys.exit(0)
 
-print("# Running createPkScript.py with {}".format(sys.argv[1]))
+print("# Running createPKScript.py with {}".format(sys.argv[1]))
 
 # Open a file: params
-f = open('parameters_pk_slave_fits.ini',mode='r')
+f = open('Templates/parameters_PK_template.ini',mode='r')
 params = Template( f.read() )
 f.close()
-
-print("# Running createPkScripts.py with {}".format(sys.argv[1]))
 
 count=0
 nscript=0
@@ -48,7 +47,8 @@ else:
 for myrun in toprocess:
     for z1, z2 in input.finalCatZShell:
 
-        print("writing %s"%input.params_fname(z1,z2,run=myrun))
+        paramfname=filenames.estimator_params(input,'PK',z1,z2,myrun)
+        print("writing %s"%paramfname)
 
         if input.Lbox is None:
             clbox='true'
@@ -56,33 +56,34 @@ for myrun in toprocess:
         else:
             clbox='false'
             lbox=input.Lbox
-        f = open(input.params_fname(z1,z2,run=myrun), "w")
+        f = open(paramfname, "w")
         f.write(params.substitute(GRID   = input.ngrid,
-                                  DATA   = input.exclude_dir(input.LE3_data_fname(z1, z2, run=myrun)), 
-                                  RANDOM = input.exclude_dir(input.LE3_random_fname(z1, z2)),
-                                  OUTPUT = 'Pks/'+input.exclude_dir(input.pk_fname(z1, z2, run=myrun)),
+                                  DATA   = filenames.exclude_dir(filenames.LE3_data(input, z1, z2, myrun)),
+                                  RANDOM = filenames.exclude_dir(filenames.LE3_random(input, z1, z2)),
+                                  OUTPUT = 'PK/Measures/'+filenames.exclude_dir(filenames.estimator_measure(input, 'PK', z1, z2, myrun)),
                                   CLBOX  = clbox, 
                                   LBOX   = lbox))
         f.close()
 
         if count==0:
 
-            copyfile("eden_slave.sh",input.script_fname(nscript))
-            print("Writing {}".format(input.script_fname(nscript)))
-            script=open(input.script_fname(nscript),"a")
+            scriptfname=filenames.estimator_script(input,'PK',nscript)
+            copyfile("Templates/eden_template.sh",scriptfname)
+            print("Writing {}".format(scriptfname))
+            script=open(scriptfname,"a")
 
         script.write("\n")
-        script.write("mkdir -p "+input.pk_fname(z1,z2,run=myrun)+"\n")
-        script.write("E-Run LE3_GC_PowerSpectrum  LE3_GC_ComputePowerSpectrum --log-level=DEBUG --parfile=PkParams/"+input.exclude_dir(input.params_fname(z1,z2,run=myrun))+" --workdir="+input.outdir+"\n\n")
+        script.write("mkdir -p "+filenames.estimator_measure(input,'PK',z1,z2,myrun)+"\n")
+        script.write("E-Run LE3_GC_PowerSpectrum  LE3_GC_ComputePowerSpectrum --log-level=DEBUG --parfile=PK/Params/"+filenames.exclude_dir(filenames.estimator_params(input,'PK',z1,z2,myrun))+" --workdir="+input.project+"\n\n")
 
         count += 1
         if count==input.max_PKs_in_script:
             count=0
-            script.write("echo '### {} DONE! ###'".format(nscript))
+            script.write("echo '### {} DONE! ###\n'".format(scriptfname))
             script.close()
             nscript+=1
 
-script.write("echo '### {} DONE! ###'".format(nscript))
+script.write("echo '### {} DONE! ###'\n".format(scriptfname))
 script.close()
 
 print("# DONE!")

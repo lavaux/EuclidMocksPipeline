@@ -7,7 +7,7 @@ from astropy.io import fits
 import healpy as hp
 import sys
 from os import path
-
+import filenames
 
 #
 # TO DO: INSERT ROTATION AND REPORT IT IN THE FOOTPRINT
@@ -27,7 +27,7 @@ print("# Running applyFootprintToMasterCatalog.py with {}".format(sys.argv[1]))
 print("# loading catalog...")
 
 # input raw catalog
-cat = fits.getdata(input.build_fname('RawCatalogs',[input.query,None]))
+cat = fits.getdata(filenames.build_fname(input,'RawCatalogs',["query"],RepoDirectory=True,skip_tags=False))
 
 # loads the survey footprint in equatorial coordinates
 footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
@@ -66,9 +66,9 @@ for field in cat.dtype.names:
 
 del cat
 
-print('# writing catalog to file {}/RawCatalogs/{}_{}.fits'.format(input.outdir,input.query,input.footprint_tag))
+print('# writing catalog to file {}/RawCatalogs/{}_{}.fits'.format(input.repo,input.query,input.footprint_tag))
 
-fits.writeto('{}/RawCatalogs/{}_{}.fits'.format(input.outdir,input.query,input.footprint_tag), extract, overwrite=True)
+fits.writeto('{}/RawCatalogs/{}_{}.fits'.format(input.repo,input.query,input.footprint_tag), extract, overwrite=True)
 
 print("# done!")
 

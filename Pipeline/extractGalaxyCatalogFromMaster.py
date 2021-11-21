@@ -6,6 +6,7 @@ import numpy as np
 from astropy.io import fits
 import sys
 from os import path
+import filenames
 
 
 if len(sys.argv)<2:
@@ -23,10 +24,10 @@ print("# Running extractGalaxyCatalogFromMaster.py with {}".format(sys.argv[1]))
 footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
 del footprint
 
-print("# loading catalog {}...".format(input.master_fname()))
+print("# loading catalog {}...".format(filenames.master(input)))
 
 # input raw catalog
-cat = fits.getdata(input.master_fname())
+cat = fits.getdata(filenames.master(input))
 
 print("# selecting galaxies...")
 
@@ -75,7 +76,7 @@ for field in extract.dtype.names:
 
 del cat
 
-fname=input.flagcat_fname()
+fname=filenames.flagcat(input)
 
 print("# writing file {}".format(fname))
 fits.writeto(fname, extract, overwrite=True)

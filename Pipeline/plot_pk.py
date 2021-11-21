@@ -9,6 +9,7 @@ from glob import glob
 import matplotlib.gridspec as gridspec
 import sys
 import importlib
+import filenames
 
 if len(sys.argv)<2:
     print("Usage: python {} [my input file]".format(sys.argv[0]))
@@ -35,32 +36,31 @@ else:
         print("# I will process run number {}".format(myrun))
 
 type1='pinocchio'
-type2=None #'flagship'
-lab1='pinocchio'
-lab2='flagship'
+type2='pinocchio'
+lab1='base'
+lab2='extinction'
 
 for z1,z2 in input.finalCatZShell:
 
     importlib.reload(input)
     input.cat_type=type1
-    fname = glob(input.pk_fname(z1,z2,run=myrun)+"/EUC_LE3_GCL_PK_*0Z_1D.fits")[0]
+    fname = glob(filenames.estimator_measure(input,'PK',z1,z2,myrun)+"/EUC_LE3_GCL_PK_*0Z_1D.fits")[0]
     print("Reading PK from file {}".format(fname))
     data1 = fits.getdata( fname )
 
     if type2 is not None:
-        input.cat_type=type2
         old_sdt = input.selection_data_tag
         old_srt = input.selection_random_tag
-        input.selection_data_tag=None
-        input.selection_random_tag=None
-        #input.shuffled_fluxes=False
-        fname = glob(input.pk_fname(z1,z2)+"/EUC_LE3_GCL_PK_*0Z_1D.fits")[0]
+        input.selection_data_tag='lutns'
+        input.selection_random_tag='lutns'
+        #input.apply_dataselection_to_random=True
+        fname = glob(filenames.estimator_measure(input,'PK',z1,z2,myrun)+"/EUC_LE3_GCL_PK_*0Z_1D.fits")[0]
         print("Reading PK from file {}".format(fname))
         data2 = fits.getdata( fname )
 
         input.selection_data_tag=old_sdt
         input.selection_random_tag=old_srt
-        #input.shuffled_fluxes=False
+        #input.apply_dataselection_to_random=False
     
 
     for order in [0,2,4]:
@@ -88,12 +88,12 @@ for z1,z2 in input.finalCatZShell:
             plot.plot(data2['K'], data2['PK{}'.format(order)], label=lab2,c='b')
             plot.plot(data2['K'],-data2['PK{}'.format(order)], ':', c='b')
 
-            res.plot(data1['K'], data2['PK{}'.format(order)]/data1['PK{}'.format(order)]-1., c='r')
+            res.plot(data1['K'], data2['PK{}'.format(order)]/data1['PK{}'.format(order)]-1., c='b')
 
-        res.plot(data1['K'],np.zeros_like(data1['K']),c='k')
+        res.plot(data1['K'],np.zeros_like(data1['K']),c='r')
         plot.legend()
 
-        fname=input.plot_pk_fname(order,z1,z2,run=myrun)
+        fname=filenames.plot_estimator(input,'PK',order,z1,z2,myrun)
         fig.savefig(fname)
         print("## written image in file "+fname)
 

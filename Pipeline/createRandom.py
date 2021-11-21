@@ -6,7 +6,7 @@ import numpy as np
 import healpy as hp
 import sys
 from astropy.io import fits
-
+import filenames
 
 if len(sys.argv)<2:
     print("Usage: pyton {} [my input file]".format(sys.argv[0]))
@@ -42,14 +42,14 @@ print("# Assigning redshifts and fluxes...")
 
 if (input.cat_type is not 'pinocchio') | (input.pinocchio_last_run is None):
 
-    fname = input.galcat_fname(input.pinocchio_first_run)
+    fname = filenames.galcat(input,input.pinocchio_first_run)
     print ("# loading data catalog {}...".format(fname))
     datacat = fits.getdata(fname)
 
     # apply selection to data catalog if required
     if (input.apply_dataselection_to_random) & (input.selection_data_tag is not None):
         print("# Applying selection {} to data...".format(input.selection_data_tag))
-        sel = fits.getdata(input.selection_data_fname())['SELECTION']
+        sel = fits.getdata(filenames.selection_data(input))['SELECTION']
         data_redshift = datacat[input.redshift_key][sel]
         data_flux     = datacat[input.flux_key][sel]
     else:
@@ -84,40 +84,41 @@ else:
 
     # for a set of data catalogs, it adds them randomly to the random vector.
     # Here each data mock is used as a whole, and it can be replicated several times
-    dndz  = fits.getdata(input.dndz_fname(r1=input.pinocchio_first_run,r2=input.pinocchio_last_run))
-    Ngal  = np.int(dndz['N_gal'].sum())
-    Nrandom = np.int(input.alpha * Ngal)
 
     # we extract here alpha+1 mocks to avoid that the number of galaxies is insufficient
     tobeused = np.sort(np.random.uniform(input.pinocchio_first_run,input.pinocchio_last_run+1,input.alpha+1).astype(int))
     howmanytimes = np.array([np.in1d(tobeused,i).sum() for i in range(0,input.pinocchio_last_run+1)])
 
-    Nstored  = 0
-    redshift = np.empty(Nrandom, dtype=float)
-    flux     = np.empty(Nrandom, dtype=float)
+    Nrandom=0
+    redshift = np.array([])
+    flux     = np.array([])
+
     for myrun in np.arange(input.pinocchio_first_run, input.pinocchio_last_run + 1):
         if howmanytimes[myrun]>0:
 
-            fname = input.galcat_fname(myrun)
+            fname = filenames.galcat(input,myrun)
             print ("# loading data catalog {} to be used {} times...".format(fname,howmanytimes[myrun]))
             datacat = fits.getdata(fname)
-            Ndata = datacat[input.redshift_key].size
-            # no selection is applied to pinocchio mocks
+
+            # applies selection if required
+            if (input.apply_dataselection_to_random) & (input.selection_data_tag is not None):
+                print("# Applying selection {} to data...".format(input.selection_data_tag))
+                sel = fits.getdata(filenames.selection_data(input,myrun))['SELECTION']
+                data_redshift = datacat[input.redshift_key][sel]
+                data_flux     = datacat[input.flux_key][sel]
+            else:
+                data_redshift = datacat[input.redshift_key]
+                data_flux     = datacat[input.flux_key]
+            del datacat
+
+            Ndata = data_redshift.size
 
             for i in range(howmanytimes[myrun]):
-                if (Ndata + Nstored < Nrandom):
-                    Nadd = Ndata
-                    redshift[Nstored:Nstored + Ndata] = datacat[input.redshift_key]
-                    flux    [Nstored:Nstored + Ndata] = datacat[input.flux_key]
-                    Nstored += Ndata
-                else:
-                    Nadd = Nrandom-Nstored
-                    thesegals = np.random.uniform(0,Ndata,Nadd).astype(int)
-                    redshift[Nstored:Nrandom] = datacat[input.redshift_key][thesegals]
-                    flux    [Nstored:Nrandom] = datacat[input.flux_key][thesegals]
-                    Nstored = Nrandom
-                print("    added %d random galaxies, total: %d"%(Nadd,Nstored))
-                    
+                redshift = np.concatenate((redshift,data_redshift))
+                flux     = np.concatenate((flux,data_flux))
+
+                Nrandom+=Ndata
+                print("    added %d random galaxies, total: %d"%(Ndata,Nrandom))
 
 print("# Starting to create {} random positions...".format(Nrandom))
 Nbunch = Nrandom//10
@@ -147,13 +148,13 @@ while (Nstored<Nrandom):
 ra_gal *= 180./np.pi
 dec_gal *= 180./np.pi
 
-print("# Saving random to file {}...".format(input.random_fname()))
+print("# Saving random to file {}...".format(filenames.random(input)))
 ################# Saving random galaxies and random redshift################
 red  = fits.Column( name=input.redshift_key,  array=redshift, format='E' )
 ra   = fits.Column( name='ra_gal',            array=ra_gal,   format='E' )
 dec  = fits.Column( name='dec_gal',           array=dec_gal,  format='E' )
 flu  = fits.Column( name=input.flux_key,   array=flux,     format='E' )
 tw   = fits.BinTableHDU.from_columns([red, ra, dec, flu])
-tw.writeto(input.random_fname(), overwrite=True)
+tw.writeto(filenames.random(input), overwrite=True)
 
 print("# DONE!")

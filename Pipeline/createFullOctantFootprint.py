@@ -11,7 +11,7 @@ from healpy.rotator import Rotator
 import sys
 from os import path
 
-outdir = '../Products/'
+outdir = '../Repo/'
 
 # these are the parameters of the footprint
 
@@ -33,7 +33,7 @@ sky_fraction = footprint.sum()/footprint.size
 
 # plot of the location
 hp.mollview(footprint.astype(int)+reddening,max=0.2)
-plt.savefig(outdir+'Plots/FullOctant.png')
+plt.savefig(outdir+'Footprints/FullOctant.png')
 
 # writes footprint on fits file
 print("## writing footprint on file {}".format(footprint_fname))
