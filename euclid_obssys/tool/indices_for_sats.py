@@ -11,20 +11,22 @@ from ..config import readConfig
 def createIndicesForSats(config: str) -> None:
     from astropy.table import Table
     import numpy as np
-    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    from .. import filenames
     import sys
 
     input = readConfig(config)
 
     print("# Running createIndicesForSats.py")
 
-    with DefaultCatalogRead(input.master_fname()) as source:
+    fname = filenames.master(input)
+    with DefaultCatalogRead(fname) as source:
         cat = source["catalog"]
 
     # cat=fits.getdata('../Products/RawCatalogs/8614_100sqdeg.fits')
     # cat=fits.getdata('../Products/catalog.fits')
 
-    print(f"read {input.master_fname()}")
+    print(f"read {fname}")
 
     halo_id = cat["halo_id"]
     kind = cat["kind"]
@@ -92,7 +94,8 @@ def createIndicesForSats(config: str) -> None:
     # fname='../Products/RawCatalogs/8614_100sqdeg_indices.fits'
     # t.write(fname,format='fits',overwrite=True)
 
-    with DefaultCatalogWrite(input.indices_fname()) as store:
+    fname = filenames.indices(input)
+    with DefaultCatalogWrite(fname) as store:
         store.set_array("indices", halo_index.astype([("indices", int)]))
 
-    print("written file " + input.indices_fname())
+    print(f"written file {fname}")

@@ -31,12 +31,14 @@ def createSmoothHOD(config: str) -> None:
     print(f"# The footprint covers {100*sky_fraction}% of the sky")
 
     # Import the Raw Catalog
-    print("# Reading indices from file {}...".format(input.indices_fname()))
-    with DefaultCatalogRead(input.indices_fname()) as cat_file:
+    fname = filenames.indices(input)
+    print("# Reading indices from file {}...".format(fname))
+    with DefaultCatalogRead(fname) as cat_file:
         rawcat_indices = cat_file["indices"]["indices"]
 
-    print("# Reading Catalog {}...".format(input.master_fname()))
-    with DefaultCatalogRead(input.master_fname()) as cat_file:
+    master_fname = filenames.master(input)
+    print(f"# Reading Catalog {master_fname}...")
+    with DefaultCatalogRead(master_fname) as cat_file:
         rawcat = cat_file["catalog"]
 
     print("# Extracting colums from the catalog...")

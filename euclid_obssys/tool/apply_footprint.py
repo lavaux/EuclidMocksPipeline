@@ -61,7 +61,7 @@ def applyFootprintToMaster(config: str) -> None:
 
     print(f"# Nextract={Nextract}")
 
-    master_fname = build_fname('RawCatalogs',[query,footprint_tag])
+    master_fname = f"{input.repo}/RawCatalogs/{input.query}_{input.footprint_tag}.fits"
     with DefaultCatalogWrite(master_fname) as store:
 
         extract = store.new_array("catalog", shape=(Nextract,), dtype=cat.dtype)
