@@ -6,7 +6,6 @@ from . import register_tool
 import sys
 from ..config import readConfig
 
-
 @register_tool
 def createIndicesForSats(config: str) -> None:
     from astropy.table import Table

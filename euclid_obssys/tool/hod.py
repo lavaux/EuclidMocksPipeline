@@ -5,7 +5,6 @@
 from . import register_tool
 from ..config import readConfig
 
-
 @register_tool
 def createSmoothHOD(config: str) -> None:
     """Create a HOD curves to prepare as SDHOD catalog.
