@@ -1,5 +1,5 @@
 import numpy as np
-import sdhod
+from . import sdhod
 from astropy.io import fits
 from scipy import interpolate as interp
 from colossus.halo import concentration

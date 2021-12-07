@@ -4,6 +4,7 @@ from . import (
     footprint,
     extract,
     hod,
+    hod_pinocchio,
     random,
     dn_dz,
     numbercounts,

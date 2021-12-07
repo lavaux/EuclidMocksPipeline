@@ -44,7 +44,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         pinfname = filenames.pinplc(input, myrun)
         if not os.path.isfile(pinfname):
-            print("ERROR, file {} not found, skipping this run")
+            print(f"ERROR, file {pinfname} not found, skipping this run")
             continue
         print("# Reading plc from file {}".format(pinfname))
         pincat = rp.plc(pinfname)
