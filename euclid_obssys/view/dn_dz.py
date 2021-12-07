@@ -10,7 +10,8 @@ from ..config import readConfig
 def dn_dz(config: str):
     from astropy.io import fits
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
     import numpy as np
@@ -40,7 +41,7 @@ def dn_dz(config: str):
     fname = filenames.dndz(input)
     print("Reading dndz from file {}".format(fname))
     with DefaultCatalogRead(fname) as store:
-      dndz = store['dn_dz']
+        dndz = store["dn_dz"]
 
     fig = plt.figure(figsize=(8, 8))
     plt.suptitle(filenames.exclude_dir(fname))
@@ -149,7 +150,7 @@ def dn_dz(config: str):
         fname = filenames.random(input)
         print(f"Reading random catalog {fname}...")
         with DefaultCatalogRead(fname) as store:
-          random = store["catalog"]
+            random = store["catalog"]
 
         Ng = (
             np.histogram(random[input.redshift_key], bins=ztab)[0]
@@ -166,7 +167,7 @@ def dn_dz(config: str):
             sel_fname = filenames.selection_random(input)
             print(f"Reading random selection {sel_fname}...")
             with DefaultCatalogRead(sel_fname) as store:
-               sel = store["SELECTION"]["SELECTION"]
+                sel = store["SELECTION"]["SELECTION"]
             Ng = (
                 np.histogram(random[input.redshift_key][sel], bins=ztab)[0]
                 / sky_coverage

@@ -73,10 +73,10 @@ def createSelection(
     sel_input_fname = filenames.sel_input(input, use_data)
 
     if not use_data and input.apply_dataselection_to_random:
-            print(
-                "apply_dataselection_to_random has been specified, nothing to do here, exiting"
-            )
-            sys.exit(0)
+        print(
+            "apply_dataselection_to_random has been specified, nothing to do here, exiting"
+        )
+        sys.exit(0)
 
     # load selection input
     sel_input = readConfig(sel_input_fname)
@@ -120,9 +120,7 @@ def createSelection(
         # this option is alternative to extinction, visibilitymask, fluxcut
 
         lut_fname = os.path.join(input.repo, sel_input.lookup_table_fname)
-        print(
-            f"Loading lookup table {lut_fname}"
-        )
+        print(f"Loading lookup table {lut_fname}")
         lut = fits.getdata(lut_fname)
 
         # THESE SHOULD BE IN THE HEADER...
@@ -192,12 +190,8 @@ def createSelection(
         else:
             noise_fname = os.path.join(input.outdir, sel_input.lookup_noise_fname)
             if os.path.isfile(noise_fname):
-                print(
-                    f"# Reading noise map {noise_fname}"
-                )
-                noise_map = hp.read_map(
-                    noise_fname, partial=True
-                )
+                print(f"# Reading noise map {noise_fname}")
+                noise_map = hp.read_map(noise_fname, partial=True)
                 if pixels is None:
                     conv = np.pi / 180.0
                     pixels = hp.ang2pix(
@@ -221,7 +215,7 @@ def createSelection(
                 4.0 * one_exposure * np.ones(Ngal, dtype=np.float32)
             )  # four exposures
         else:
-            exptime_fname = os.path.join(input.outdir , sel_input.lookup_exptime_fname)
+            exptime_fname = os.path.join(input.outdir, sel_input.lookup_exptime_fname)
             if os.path.isfile(exptime_fname):
                 print(f"# Reading exposure time map {exptime_fname}")
                 exptime_map = hp.read_map(exptime_fname, partial=True)
@@ -287,9 +281,7 @@ def createSelection(
 
     elif "visibilitymask" in sel_input.selection_keys:
         VM_fname = os.path.join(input.repo, sel_input.selection_VM_fname)
-        print(
-            f"# applying visibility mask {VM_fname}..."
-        )
+        print(f"# applying visibility mask {VM_fname}...")
 
         VM = fits.getdata(VM_fname)["VM"]
         VM = hp.ud_grade(VM, sel_input.selection_VM_res)

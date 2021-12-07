@@ -225,10 +225,10 @@ def flagcat(pars):
 
 def sel_input(pars, use_data: bool) -> str:
     if use_data:
-       if pars.selection_data_tag is None:
+        if pars.selection_data_tag is None:
             print("No selection specified for galaxy catalog, exiting")
             sys.exit(0)
-       else:
+        else:
             sel_input_tag = "sel_data"
     else:
         if pars.selection_random_tag is None:
@@ -237,10 +237,14 @@ def sel_input(pars, use_data: bool) -> str:
         else:
             sel_input_tag = "sel_rand"
 
-
     tag_filter = [sel_input_tag]
     sel_input_fname = build_fname(
-        pars, "SelectionInputs", tag_filter, head="sel_input", RepoDirectory=True, ext=".py"
+        pars,
+        "SelectionInputs",
+        tag_filter,
+        head="sel_input",
+        RepoDirectory=True,
+        ext=".py",
     )
     return sel_input_fname
 
@@ -683,6 +687,7 @@ def plot_numbercounts(pars, z1, z2, myrun=None):
         ext=".png",
     )
 
+
 def plot_hod(pars, type="centrals", myrun=None):
     tag_filter = galcat_kernel(pars)
     tag_filter.append("sel_data")
@@ -690,4 +695,6 @@ def plot_hod(pars, type="centrals", myrun=None):
     tag_filter.append("rsd")
     tag_filter.append("redshift")
 
-    return build_fname(pars, "Plots", tag_filter, runstart=myrun, head=f"SDHOD_{type}", ext=".png")
+    return build_fname(
+        pars, "Plots", tag_filter, runstart=myrun, head=f"SDHOD_{type}", ext=".png"
+    )

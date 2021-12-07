@@ -1,6 +1,7 @@
 from . import register_tool
 from ..config import readConfig
 
+
 @register_tool
 def createProjectDirectoryTree(project: str = "Repo") -> None:
     """Setup a new repository of mocks and data files for a systematic study project
@@ -10,12 +11,10 @@ def createProjectDirectoryTree(project: str = "Repo") -> None:
     """
     import os
 
-
     def project_mkdir(*subprojects):
-        dir=os.path.join(project, *subprojects)
+        dir = os.path.join(project, *subprojects)
         print(f"  creating {dir}")
         os.mkdir(dir)
-
 
     print(f"Project: {project}")
 
@@ -46,7 +45,7 @@ def createProjectDirectoryTree(project: str = "Repo") -> None:
         "BK",
         ("BK", "Measures"),
         ("BK", "Params"),
-        ("BK", "Scripts")
+        ("BK", "Scripts"),
     ]
 
     for s in subdirs:

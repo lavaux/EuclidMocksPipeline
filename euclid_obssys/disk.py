@@ -6,9 +6,11 @@ import numpy as np
 import numpy.typing as npt
 import os
 
+
 def ensurePath(basepath):
-        if not os.path.exists(basepath):
-            os.makedirs(basepath)
+    if not os.path.exists(basepath):
+        os.makedirs(basepath)
+
 
 class AbstractCatalogWrite(ABC):
     @abstractmethod
@@ -114,6 +116,7 @@ class CatalogFitsRead(AbstractCatalogRead, AbstractContextManager):
             for i in range(1, len(self.file)):
                 self.arrays[self.header[f"TN{i}"]] = i
         import pprint
+
         pprint.pprint(self.arrays)
         return self
 

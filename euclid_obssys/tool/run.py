@@ -15,7 +15,7 @@ from . import (
     create_selection,
     writeCatalogs4LE3,
     setup_repo,
-    create_pk_scripts
+    create_pk_scripts,
 )
 
 
