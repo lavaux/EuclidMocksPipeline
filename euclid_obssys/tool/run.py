@@ -13,7 +13,8 @@ from . import (
     apply_footprint,
     create_selection,
     writeCatalogs4LE3,
-    setup_repo
+    setup_repo,
+    create_pk_scripts
 )
 
 
