@@ -4,6 +4,7 @@
 ################################################################################
 from . import register_tool
 from ..config import readConfig
+import pkg_resources
 
 
 def batch_script(iterator, name_gen, batch):
@@ -29,16 +30,16 @@ def batch_script(iterator, name_gen, batch):
                 script.write("echo '### {} DONE! ###\n'".format(scriptfname))
 
     with open(scriptfname,"a") as script:
-        script.write("echo '### {} DONE! ###\n'".format(scriptfname))
+        script.write(f"echo '### {scriptfname} DONE! ###'\n")
 
 
+@register_tool
 def createPkScripts(config: str) -> None:
     """Create scripts to execute LE3 power spectrum estimator on the mock catalogs
 
     Args:
         config (str): Pipeline configuration file
     """
-    import pkg_resources
     from euclid_obssys.disk import DefaultCatalogWrite
     from string import Template
     from shutil import copyfile
