@@ -19,6 +19,7 @@ def numbercounts(config: str):
     import sys
     from os import path
     from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    from .. import filenames
 
     print("# Running numbercounts.py with {}".format(config))
     input = readConfig(config)
@@ -36,12 +37,12 @@ def numbercounts(config: str):
             print("# I will process run number {}".format(myrun))
     
     # data catalog
-    fname = input.galcat_fname(myrun)
+    fname = filenames.galcat(input)
 
-    print("# loading catalog {}...".format(fname))
+    print(f"# loading catalog {fname}...")
 
     if not path.exists(fname):
-        print("ERROR: galaxy catalog {} does not exist".format(fname))
+        print(f"ERROR: galaxy catalog {fname} does not exist")
         sys.exit(-1)
 
     with DefaultCatalogRead(fname) as store:
@@ -53,8 +54,9 @@ def numbercounts(config: str):
 
     # selection
     if input.selection_data_tag is not None:
-        print("# loading selection {}...".format(input.selection_data_fname()))
-        with DefaultCatalogRead(input.selection_data_fname(run=myrun)) as store:
+        fname = filenames.selection_data(input, myrun)
+        print(f"# loading selection {fname}...")
+        with DefaultCatalogRead(fname) as store:
             selection = store["SELECTION"]["SELECTION"]
     else:
         selection = np.ones(len(cat), dtype=bool)
@@ -91,7 +93,7 @@ def numbercounts(config: str):
         LF_sat = (Ngal - Ncen) / sky_coverage / (z2 - z1) / DeltaF
 
         ## Writes on file
-        fname = input.numbercounts_fname(z1, z2, run=myrun)
+        fname = filenames.numbercounts(input, z1, z2, myrun)
         print("# Writing results in file {}".format(fname))
 
         with DefaultCatalogWrite(fname) as store:

@@ -70,20 +70,9 @@ def createSelection(
         print("# Selection will be applied to the data catalog")
 
     # check selection tags
-    if use_data:
-        if input.selection_data_tag is None:
-            print("No selection specified for galaxy catalog, exiting")
-            sys.exit(0)
-        else:
-            sel_input_fname = "sel_input_{}.py".format(input.selection_data_tag)
-    else:
-        if input.selection_random_tag is None:
-            print("No selection specified for random catalog, exiting")
-            sys.exit(0)
-        else:
-            sel_input_fname = "sel_input_{}.py".format(input.selection_random_tag)
+    sel_input_fname = filenames.sel_input(input, use_data)
 
-        if input.apply_dataselection_to_random:
+    if not use_data and input.apply_dataselection_to_random:
             print(
                 "apply_dataselection_to_random has been specified, nothing to do here, exiting"
             )

@@ -205,7 +205,7 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
                 (input.redshift_key, float),
                 ("ra_gal", float),
                 ("dec_gal", float),
-                (input.my_flux_key, float),
+                (input.flux_key, float),
             ],
             tags={"legacy": legacy_algorithm},
         )

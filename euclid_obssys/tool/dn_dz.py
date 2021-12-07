@@ -76,7 +76,14 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
            with DefaultCatalogRead(fname) as store:
              cat = store['catalog']
    
-           # NB: no selection is applied to pinocchio mocks
+           if input.selection_data_tag is not None:
+               myfname=filenames.selection_data(input,myrun)
+               print(f"# loading selection {myfname}...")
+               with DefaultCatalogRead(sel_fname) as store:
+                   mysel=store["SELECTION"]["SELECTION"]
+           else:
+               mysel = np.ones(len(cat),dtype=bool)
+   
    
            print("# Processing catalog...")
    
@@ -101,17 +108,9 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
 
         # selection
         if input.selection_data_tag is not None:
-            myfname=filenames.selection_data(input,input.pinocchio_first_run)
+            myfname = filenames.selection_data(input, myrun)
             print(f"# loading selection {myfname}...")
-            with DefaultCatalogRead(sel_fname) as store:
-                mysel=store["SELECTION"]["SELECTION"]
-        else:
-            mysel = np.ones(len(cat),dtype=bool)
-
-
-        if input.selection_data_tag is not None:
-            print("# loading selection {}...".format(input.selection_data_fname(myrun)))
-            with DefaultCatalogRead(input.selection_data_fname()) as store:
+            with DefaultCatalogRead(myfname) as store:
                mysel=store["SELECTION"]["SELECTION"]
         else:
             mysel = np.ones(len(cat), dtype=bool)

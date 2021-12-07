@@ -1,5 +1,6 @@
 from typing import Tuple
 import numpy as np
+from .disk import ensurePath
 
 """
 This constructs the file names for all files accessible by the pipeline
@@ -129,6 +130,8 @@ def build_fname(
     else:
         fname = thisdir
 
+    ensurePath(fname)
+
     # list of tags to skip
     if skip_tags and pars.skip_tags is not None:
         exclude = pars.skip_tags
@@ -220,12 +223,34 @@ def flagcat(pars):
     return fname
 
 
+def sel_input(pars, use_data: bool) -> str:
+    if use_data:
+       if pars.selection_data_tag is None:
+            print("No selection specified for galaxy catalog, exiting")
+            sys.exit(0)
+       else:
+            sel_input_tag = "sel_data"
+    else:
+        if pars.selection_random_tag is None:
+            print("No selection specified for random catalog, exiting")
+            sys.exit(0)
+        else:
+            sel_input_tag = "sel_rand"
+
+
+    tag_filter = [sel_input_tag]
+    sel_input_fname = build_fname(
+        pars, "SelectionInputs", tag_filter, head="sel_input", RepoDirectory=True, ext=".py"
+    )
+    return sel_input_fname
+
+
 def hodcat(pars):
     """
     name of smooth hod galaxy catalog, bypasses cat_type
     """
     save = pars.cat_type
-    pars.cat_type = "hodcat"
+    pars.cat_type = "sdhod"  # hodcat"
     tag_filter = [
         "cat_type",
         "query",
@@ -657,3 +682,12 @@ def plot_numbercounts(pars, z1, z2, myrun=None):
         redshift=[z1, z2],
         ext=".png",
     )
+
+def plot_hod(pars, type="centrals", myrun=None):
+    tag_filter = galcat_kernel(pars)
+    tag_filter.append("sel_data")
+    tag_filter.append("shuffled")
+    tag_filter.append("rsd")
+    tag_filter.append("redshift")
+
+    return build_fname(pars, "Plots", tag_filter, runstart=myrun, head=f"SDHOD_{type}", ext=".png")

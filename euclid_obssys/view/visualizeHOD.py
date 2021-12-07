@@ -14,7 +14,8 @@ def visualizeHOD(config: str, ext: str = "png"):
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    from ..disk import DefaultCatalogRead, ensurePath
+    from ..disk import DefaultCatalogRead
+    from .. import filenames
     import sys
 
     input = readConfig(config)
@@ -42,10 +43,8 @@ def visualizeHOD(config: str, ext: str = "png"):
         ]
     )
 
-    with DefaultCatalogRead(input.SDHOD_fname()) as store:
+    with DefaultCatalogRead(filenames.SDHOD(input)) as store:
         sdhod = store["sdhod"]
-
-    ensurePath(os.path.join(input.outdir, "Plots"))
 
     izbins = np.arange(12) * 10
     Mx = 10.0 ** (0.5 * (sdhod["M_bins"][0, 1:] + sdhod["M_bins"][0, :-1]))
@@ -73,7 +72,7 @@ def visualizeHOD(config: str, ext: str = "png"):
     plt.xlabel("halo mass (Msun/h)")
     plt.ylabel(r"$N_{\rm cen} (M_h|z)$")
     plt.legend()
-    plt.savefig(os.path.join(input.outdir, "Plots", f"SDHOD_centrals.{ext}"))
+    plt.savefig(filenames.plot_hod(input, type="centrals"))
 
     plt.figure()
     plt.title("SD-HOD, satellites")
@@ -96,4 +95,4 @@ def visualizeHOD(config: str, ext: str = "png"):
     plt.xlabel("halo mass (Msun/h)")
     plt.ylabel(r"$N_{\rm cen} (M_h|z)$")
     plt.legend()
-    plt.savefig(os.path.join(input.outdir, "Plots", f"SDHOD_sats.{ext}"))
+    plt.savefig(filenames.plot_hod(input, type="sats"))

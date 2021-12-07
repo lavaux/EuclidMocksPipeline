@@ -189,7 +189,8 @@ def writeCatalogs4LE3(config: str) -> None:
     import numpy as np
     import sys
     import healpy as hp
-    from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
+    from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    from .. import filenames
 
     input = readConfig(config)
 
@@ -206,22 +207,23 @@ def writeCatalogs4LE3(config: str) -> None:
     else:
         n1 = n2 = 0
 
-    fname = input.dndz_fname(r1=r1, r2=r2)
+    fname = filenames.dndz(input)
     print(f"# Reading dndz from {fname}")
     with DefaultCatalogRead(fname) as store:
         dndz = store["dn_dz"]
 
     # you can skip the writing of the random
     if input.WriteLE3Random:
-        print(f"# reading random catalog {input.random_fname()}...")
-        with DefaultCatalogRead(input.random_fname()) as store:
+        myfname = filenames.random(input)
+        print(f"# reading random catalog {myfname}...")
+        with DefaultCatalogRead(myfname) as store:
             randomcat = store["catalog"]
 
         if (not input.apply_dataselection_to_random) & (
             input.selection_random_tag is not None
         ):
-            fname = input.selection_random_fname()
-            print("# reading selection of random from file {}...".format(fname))
+            fname = filenames.selection_random(input)
+            print(f"# reading selection of random from file {fname}...")
             with DefaultCatalogRead(fname) as store:
                 selection = store["SELECTION"]["SELECTION"]
         else:
@@ -245,10 +247,11 @@ def writeCatalogs4LE3(config: str) -> None:
                 dndz["N_gal"] / dndz["bin_volume"],
             )
 
-            print("# writing random file {}".format(input.LE3_random_fname(zmin, zmax)))
+            rand_fname = filenames.LE3_random(input, zmin, zmax)
+            print(f"# writing random file {rand_fname}")
             write_catalog_LE3(
                 input,
-                input.LE3_random_fname(zmin, zmax),
+                rand_fname,
                 randomcat["ra_gal"][sel],
                 randomcat["dec_gal"][sel],
                 randomcat[input.redshift_key][sel],
@@ -265,14 +268,14 @@ def writeCatalogs4LE3(config: str) -> None:
         toprocess = range(n1, n2 + 1)
 
     for myrun in toprocess:
-        fname = input.galcat_fname(myrun)
+        fname = filenames.galcat(input, myrun)
         print(f"# reading data catalog {fname}...")
         with DefaultCatalogRead(fname) as store:
             cat = store["catalog"]
         zused = cat[input.redshift_key]
         if input.selection_data_tag is not None:
-            fname = input.selection_data_fname(run=myrun)
-            print("# loading selection {}...".format(fname))
+            fname = filenames.selection_data(input, myrun)
+            print(f"# loading selection {fname}...")
             with DefaultCatalogRead(fname) as store:
                 selection = store["SELECTION"]["SELECTION"]
         else:
@@ -290,7 +293,7 @@ def writeCatalogs4LE3(config: str) -> None:
                 zused[mysel], dndz["z_center"], dndz["N_gal"] / dndz["bin_volume"]
             )
 
-            fname = input.LE3_data_fname(zmin, zmax, myrun)
+            fname = filenames.LE3_data(input, zmin, zmax, myrun)
             print("# writing data file {}".format(fname))
             write_catalog_LE3(
                 input,

@@ -17,14 +17,11 @@ def dn_dz(config: str):
     import healpy as hp
     import sys
     from ..disk import DefaultCatalogRead, DefaultCatalogWrite
+    from .. import filenames
 
     input = readConfig(config)
 
     print(f"# Running plot_dndz.py with {config}")
-
-    if not input.PLOT:
-        print("Plots are not required, exiting...")
-        sys.exit(0)
 
     # special behaviour
     labd = "lookup"
@@ -40,13 +37,13 @@ def dn_dz(config: str):
     print("This survey covers {} sq deg".format(sky_coverage))
     del footprint
 
-    fname = input.dndz_fname(input.pinocchio_first_run, input.pinocchio_last_run)
+    fname = filenames.dndz(input)
     print("Reading dndz from file {}".format(fname))
     with DefaultCatalogRead(fname) as store:
       dndz = store['dn_dz']
 
     fig = plt.figure(figsize=(8, 8))
-    plt.suptitle(input.exclude_dir(fname))
+    plt.suptitle(filenames.exclude_dir(fname))
 
     gs = gridspec.GridSpec(2, 1, height_ratios=[2.5, 1], hspace=0)
 
@@ -149,8 +146,10 @@ def dn_dz(config: str):
         )
 
     if CHECK_WITH_RANDOM:
-        print("Reading random catalog {}...".format(input.random_fname()))
-        random = fits.getdata(input.random_fname())
+        fname = filenames.random(input)
+        print(f"Reading random catalog {fname}...")
+        with DefaultCatalogRead(fname) as store:
+          random = store["catalog"]
 
         Ng = (
             np.histogram(random[input.redshift_key], bins=ztab)[0]
@@ -164,8 +163,10 @@ def dn_dz(config: str):
         if (not input.apply_dataselection_to_random) & (
             input.selection_random_tag is not None
         ):
-            print("Reading random selection {}...".format(input.random_fname()))
-            sel = fits.getdata(input.selection_random_fname())["SELECTION"]
+            sel_fname = filenames.selection_random(input)
+            print(f"Reading random selection {sel_fname}...")
+            with DefaultCatalogRead(sel_fname) as store:
+               sel = store["SELECTION"]["SELECTION"]
             Ng = (
                 np.histogram(random[input.redshift_key][sel], bins=ztab)[0]
                 / sky_coverage
@@ -182,8 +183,9 @@ def dn_dz(config: str):
     if input.SHOW:
         plt.show()
 
-    plt.savefig(input.plot_dndz_fname())
-    print("## written image in file {}".format(input.plot_dndz_fname()))
+    plot_fname = filenames.plot_dndz(input)
+    plt.savefig(plot_fname)
+    print(f"## written image in file {plot_fname}")
 
     if COMPLETENESS and second_dndz_fname is not None:
 
