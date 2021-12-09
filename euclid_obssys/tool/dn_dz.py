@@ -79,7 +79,7 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
            if input.selection_data_tag is not None:
                myfname=filenames.selection_data(input,myrun)
                print(f"# loading selection {myfname}...")
-               with DefaultCatalogRead(sel_fname) as store:
+               with DefaultCatalogRead(myfname) as store:
                    mysel=store["SELECTION"]["SELECTION"]
            else:
                mysel = np.ones(len(cat),dtype=bool)

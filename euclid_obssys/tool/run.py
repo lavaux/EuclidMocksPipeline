@@ -43,4 +43,5 @@ class EuclidTool(object):
 def run_tool():
     import fire
 
-    fire.Fire(EuclidTool, name="euclid_obssys.tool")
+    result = fire.Fire(EuclidTool, name="euclid_obssys.tool")
+    raise SystemExit(0 if result else 1)

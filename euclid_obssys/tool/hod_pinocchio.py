@@ -15,6 +15,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
     from colossus.halo import concentration
     from scipy.stats import poisson
     from .. import pinocchio as rp
+    from ..disk import DefaultCatalogWrite
     import healpy as hp
     import sys
     import os.path
@@ -308,8 +309,10 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
         fname = filenames.pincat(input, myrun)
         print("# Saving the catalog to file {}".format(fname))
 
-        catalog = np.empty(
-            Ngal,
+        with DefaultCatalogWrite(fname) as store:
+          catalog = store.new_array(
+            "catalog",
+            shape=(Ngal,),
             dtype=[
                 ("x_gal", np.float32),
                 ("y_gal", np.float32),
@@ -325,25 +328,22 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
                 (input.flux_key, np.float32),
                 ("sh_" + input.flux_key, np.float32),
             ],
-        )
+          )
 
-        catalog["x_gal"] = xgal
-        catalog["y_gal"] = ygal
-        catalog["z_gal"] = zgal
-        catalog["true_redshift_gal"] = true_zgal
-        catalog["observed_redshift_gal"] = obs_zgal
-        catalog["ra_gal"] = ra_gal
-        catalog["dec_gal"] = dec_gal
-        catalog["halo_lm"] = halo_m
-        catalog["kind"] = kind
-        catalog[input.flux_key] = log10f
-        catalog["sh_" + input.flux_key] = shuffled_log10f
-        catalog["id"] = cid
-        catalog["halo_id"] = haloid
+          catalog["x_gal"] = xgal
+          catalog["y_gal"] = ygal
+          catalog["z_gal"] = zgal
+          catalog["true_redshift_gal"] = true_zgal
+          catalog["observed_redshift_gal"] = obs_zgal
+          catalog["ra_gal"] = ra_gal
+          catalog["dec_gal"] = dec_gal
+          catalog["halo_lm"] = halo_m
+          catalog["kind"] = kind
+          catalog[input.flux_key] = log10f
+          catalog["sh_" + input.flux_key] = shuffled_log10f
+          catalog["id"] = cid
+          catalog["halo_id"] = haloid
 
-        fits.writeto(fname, catalog, overwrite=True)
         print("# done with catalog %d\n" % myrun)
-
-        del catalog
 
     print("# !!DONE!!")

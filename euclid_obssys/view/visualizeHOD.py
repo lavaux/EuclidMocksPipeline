@@ -43,7 +43,9 @@ def visualizeHOD(config: str, ext: str = "png"):
         ]
     )
 
-    with DefaultCatalogRead(filenames.SDHOD(input)) as store:
+    fname = filenames.SDHOD(input)
+    print(f"# Reading catalog {fname}")
+    with DefaultCatalogRead(fname) as store:
         sdhod = store["sdhod"]
 
     izbins = np.arange(12) * 10
@@ -72,7 +74,9 @@ def visualizeHOD(config: str, ext: str = "png"):
     plt.xlabel("halo mass (Msun/h)")
     plt.ylabel(r"$N_{\rm cen} (M_h|z)$")
     plt.legend()
-    plt.savefig(filenames.plot_hod(input, type="centrals"))
+    fname = filenames.plot_hod(input, type="centrals")
+    print(f"# Saving figure {fname}")
+    plt.savefig(fname)
 
     plt.figure()
     plt.title("SD-HOD, satellites")
@@ -95,4 +99,6 @@ def visualizeHOD(config: str, ext: str = "png"):
     plt.xlabel("halo mass (Msun/h)")
     plt.ylabel(r"$N_{\rm cen} (M_h|z)$")
     plt.legend()
-    plt.savefig(filenames.plot_hod(input, type="sats"))
+    fname = filenames.plot_hod(input, type="sats")
+    print(f"# Saving figure {fname}")
+    plt.savefig(fname)

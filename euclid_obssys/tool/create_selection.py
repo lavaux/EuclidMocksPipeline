@@ -318,7 +318,7 @@ def createSelection(
             selection &= cat["kind"] == 1
 
     if use_data:
-        fname = filenames.selection_data(input)
+        fname = filenames.selection_data(input, myrun)
     else:
         fname = filenames.selection_random(input)
 

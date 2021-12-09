@@ -103,7 +103,7 @@ def generate_random_pinocchio(input: dict) -> Tuple[ArrayLike, ArrayLike]:
 
     # for a set of data catalogs, it adds them randomly to the random vector.
     # Here each data mock is used as a whole, and it can be replicated several times
-    with DefaultCatalogRead(dndz(r1=input.pinocchio_first_run,r2=input.pinocchio_last_run)) as dn_store:
+    with DefaultCatalogRead(dndz(input)) as dn_store:
         dndz  = dn_store['dn_dz']
     Ngal  = np.int(dndz['N_gal'].sum())
     Nrandom = np.int(input.alpha * Ngal)
@@ -118,7 +118,7 @@ def generate_random_pinocchio(input: dict) -> Tuple[ArrayLike, ArrayLike]:
     for myrun in np.arange(input.pinocchio_first_run, input.pinocchio_last_run + 1):
         if howmanytimes[myrun]>0:
 
-            fname = galcat(myrun)
+            fname = galcat(input, myrun)
             print ("# loading data catalog {} to be used {} times...".format(fname,howmanytimes[myrun]))
             with DefaultCatalogRead(fname) as galstore:
                 datacat = galstore['catalog']
