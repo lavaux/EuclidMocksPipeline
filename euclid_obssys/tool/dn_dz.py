@@ -6,8 +6,9 @@ from . import register_tool
 from ..config import readConfig
 from typing import Optional
 
+
 @register_tool
-def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
+def dN_dZ(config: str, myrun: Optional[int] = None) -> None:
     """Compute the number of galaxies as a function of redshift.
 
     This is also separated into centrals and satellites,
@@ -57,7 +58,6 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
     )
     bin_center = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
-
     if (input.cat_type is 'pinocchio') & (input.pinocchio_last_run is not None):
     
         Ngal=None
@@ -104,24 +104,28 @@ def dN_dZ(config: str, myrun:Optional[int]=None) -> None:
         print("# loading catalog {}...".format(fname))
 
         with DefaultCatalogRead(fname) as store:
-            cat = store['catalog']
+            cat = store["catalog"]
 
         # selection
         if input.selection_data_tag is not None:
             myfname = filenames.selection_data(input, myrun)
             print(f"# loading selection {myfname}...")
             with DefaultCatalogRead(myfname) as store:
-               mysel=store["SELECTION"]["SELECTION"]
+                mysel = store["SELECTION"]["SELECTION"]
         else:
             mysel = np.ones(len(cat), dtype=bool)
-    
+
         print("# Processing catalog...")
 
         # Histogram
 
-        Ngal     = (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(float)
-        isCen    = cat['kind'][mysel]==0
-        Ncen     = (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(float)
+        Ngal = (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(
+            float
+        )
+        isCen = cat["kind"][mysel] == 0
+        Ncen = (
+            np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]
+        ).astype(float)
 
     ## Writes on file
     fname = filenames.dndz(input)

@@ -14,7 +14,7 @@ def generateConfig(
     """This generate a configuration file for the Euclid Observational systematics pipeline.
 
     Args:
-        repodir (str): Repository directory of Euclid data. 
+        repodir (str): Repository directory of Euclid data.
         projectdir (str): Name of the directory holding Project data.
         lf_model (int, optional): Luminosity function model to be adopted.
         rsd (bool, optional): Whether redshift space distortions must be applied. Defaults to False.
@@ -65,6 +65,7 @@ def generateConfig(
     with open(o, mode="wt") as f:
         f.write(input_template)
 
+
 @register_tool
 def generateSelConfig(
     o: str,
@@ -89,7 +90,7 @@ def generateSelConfig(
     if o is None:
         raise ValueError("Missing output file")
 
-    #replacements = {
+    # replacements = {
     #    "OUTDIR": outdir,
     #    "FOOTTAG": f'"{footprintTag}"' if not footprintTag is None else "None",
     #    "LFMODEL": repr(lf_model),
@@ -98,12 +99,13 @@ def generateSelConfig(
     #    "SELDATA": "None",
     #    "SELRAND": "None",
     #    "RSDFLAG": repr(rsd),
-    #}
+    # }
 
-    #for k, v in replacements.items():
+    # for k, v in replacements.items():
     #    input_template = re.sub(k, v, input_template)
 
     with open(o, mode="wt") as f:
         f.write(input_template)
+
 
 __all__ = ["generateConfig", "generateSelConfig"]

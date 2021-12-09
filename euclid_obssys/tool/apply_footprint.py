@@ -26,7 +26,9 @@ def applyFootprintToMaster(config: str) -> None:
 
     # input raw catalog
     with DefaultCatalogRead(
-        build_fname(input, "RawCatalogs", ["query"], RepoDirectory=True, skip_tags=False)
+        build_fname(
+            input, "RawCatalogs", ["query"], RepoDirectory=True, skip_tags=False
+        )
     ) as cat_file:
         cat = cat_file[1]
 

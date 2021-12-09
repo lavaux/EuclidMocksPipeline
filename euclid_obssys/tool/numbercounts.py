@@ -24,18 +24,18 @@ def numbercounts(config: str):
     print("# Running numbercounts.py with {}".format(config))
     input = readConfig(config)
 
-    myrun=None
-    if len(sys.argv)>=3:
-        if sys.argv[2].isdigit and input.cat_type is 'pinocchio':
-            myrun=int(sys.argv[2])
+    myrun = None
+    if len(sys.argv) >= 3:
+        if sys.argv[2].isdigit and input.cat_type is "pinocchio":
+            myrun = int(sys.argv[2])
             print("# I will process run number {}".format(myrun))
         else:
             print("# WARNING: unrecognised command-line option {}".format(sys.argv[2]))
     else:
-        if input.cat_type is 'pinocchio':
-            myrun=input.pinocchio_first_run
+        if input.cat_type is "pinocchio":
+            myrun = input.pinocchio_first_run
             print("# I will process run number {}".format(myrun))
-    
+
     # data catalog
     fname = filenames.galcat(input)
 
