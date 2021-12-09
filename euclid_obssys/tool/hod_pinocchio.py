@@ -310,39 +310,39 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
         print("# Saving the catalog to file {}".format(fname))
 
         with DefaultCatalogWrite(fname) as store:
-          catalog = store.new_array(
-            "catalog",
-            shape=(Ngal,),
-            dtype=[
-                ("x_gal", np.float32),
-                ("y_gal", np.float32),
-                ("z_gal", np.float32),
-                ("ra_gal", np.float32),
-                ("dec_gal", np.float32),
-                ("kind", np.int32),
-                ("true_redshift_gal", np.float32),
-                ("observed_redshift_gal", np.float32),
-                ("halo_lm", np.float32),
-                ("id", np.int32),
-                ("halo_id", np.int32),
-                (input.flux_key, np.float32),
-                ("sh_" + input.flux_key, np.float32),
-            ],
-          )
+            catalog = store.new_array(
+                "catalog",
+                shape=(Ngal,),
+                dtype=[
+                    ("x_gal", np.float32),
+                    ("y_gal", np.float32),
+                    ("z_gal", np.float32),
+                    ("ra_gal", np.float32),
+                    ("dec_gal", np.float32),
+                    ("kind", np.int32),
+                    ("true_redshift_gal", np.float32),
+                    ("observed_redshift_gal", np.float32),
+                    ("halo_lm", np.float32),
+                    ("id", np.int32),
+                    ("halo_id", np.int32),
+                    (input.flux_key, np.float32),
+                    ("sh_" + input.flux_key, np.float32),
+                ],
+            )
 
-          catalog["x_gal"] = xgal
-          catalog["y_gal"] = ygal
-          catalog["z_gal"] = zgal
-          catalog["true_redshift_gal"] = true_zgal
-          catalog["observed_redshift_gal"] = obs_zgal
-          catalog["ra_gal"] = ra_gal
-          catalog["dec_gal"] = dec_gal
-          catalog["halo_lm"] = halo_m
-          catalog["kind"] = kind
-          catalog[input.flux_key] = log10f
-          catalog["sh_" + input.flux_key] = shuffled_log10f
-          catalog["id"] = cid
-          catalog["halo_id"] = haloid
+            catalog["x_gal"] = xgal
+            catalog["y_gal"] = ygal
+            catalog["z_gal"] = zgal
+            catalog["true_redshift_gal"] = true_zgal
+            catalog["observed_redshift_gal"] = obs_zgal
+            catalog["ra_gal"] = ra_gal
+            catalog["dec_gal"] = dec_gal
+            catalog["halo_lm"] = halo_m
+            catalog["kind"] = kind
+            catalog[input.flux_key] = log10f
+            catalog["sh_" + input.flux_key] = shuffled_log10f
+            catalog["id"] = cid
+            catalog["halo_id"] = haloid
 
         print("# done with catalog %d\n" % myrun)
 

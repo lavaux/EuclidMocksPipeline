@@ -58,49 +58,55 @@ def dN_dZ(config: str, myrun: Optional[int] = None) -> None:
     )
     bin_center = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
-    if (input.cat_type is 'pinocchio') & (input.pinocchio_last_run is not None):
-    
-        Ngal=None
-    
-        nruns=input.pinocchio_last_run-input.pinocchio_first_run +1
-        for myrun in np.arange(input.pinocchio_first_run,input.pinocchio_last_run+1):
-   
-   
-           fname=filenames.galcat(input, myrun)
-           print(f"# loading catalog {fname}...")
-           
-           if not path.exists(fname):
-               print(f"ERROR: galaxy catalog {fname} does not exist")
-               sys.exit(-1)
-   
-           with DefaultCatalogRead(fname) as store:
-             cat = store['catalog']
-   
-           if input.selection_data_tag is not None:
-               myfname=filenames.selection_data(input,myrun)
-               print(f"# loading selection {myfname}...")
-               with DefaultCatalogRead(myfname) as store:
-                   mysel=store["SELECTION"]["SELECTION"]
-           else:
-               mysel = np.ones(len(cat),dtype=bool)
-   
-   
-           print("# Processing catalog...")
-   
-           # Histogram
-           isCen    = cat['kind'][mysel]==0
-           if Ngal is None:
-               Ngal  = (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(np.float64)
-               Ncen  = (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(np.float64)
-           else:
-               Ngal += (np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]).astype(np.float64)
-               Ncen += (np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]).astype(np.float64)
-   
-        Ngal = (Ngal/float(nruns)).astype(float)
-        Ncen = (Ncen/float(nruns)).astype(float)
-    else: 
+    if (input.cat_type is "pinocchio") & (input.pinocchio_last_run is not None):
 
-        fname=filenames.galcat(input, myrun)
+        Ngal = None
+
+        nruns = input.pinocchio_last_run - input.pinocchio_first_run + 1
+        for myrun in np.arange(input.pinocchio_first_run, input.pinocchio_last_run + 1):
+
+            fname = filenames.galcat(input, myrun)
+            print(f"# loading catalog {fname}...")
+
+            if not path.exists(fname):
+                print(f"ERROR: galaxy catalog {fname} does not exist")
+                sys.exit(-1)
+
+            with DefaultCatalogRead(fname) as store:
+                cat = store["catalog"]
+
+            if input.selection_data_tag is not None:
+                myfname = filenames.selection_data(input, myrun)
+                print(f"# loading selection {myfname}...")
+                with DefaultCatalogRead(myfname) as store:
+                    mysel = store["SELECTION"]["SELECTION"]
+            else:
+                mysel = np.ones(len(cat), dtype=bool)
+
+            print("# Processing catalog...")
+
+            # Histogram
+            isCen = cat["kind"][mysel] == 0
+            if Ngal is None:
+                Ngal = (
+                    np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]
+                ).astype(np.float64)
+                Ncen = (
+                    np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]
+                ).astype(np.float64)
+            else:
+                Ngal += (
+                    np.histogram(cat[input.redshift_key][mysel], bins=ztab)[0]
+                ).astype(np.float64)
+                Ncen += (
+                    np.histogram(cat[input.redshift_key][mysel][isCen], bins=ztab)[0]
+                ).astype(np.float64)
+
+        Ngal = (Ngal / float(nruns)).astype(float)
+        Ncen = (Ncen / float(nruns)).astype(float)
+    else:
+
+        fname = filenames.galcat(input, myrun)
         print("# loading catalog {}...".format(fname))
 
         with DefaultCatalogRead(fname) as store:
