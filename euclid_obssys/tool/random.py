@@ -102,7 +102,7 @@ def generate_random_simple(input: dict) -> Tuple[ArrayLike, ArrayLike]:
 def generate_random_pinocchio(input: dict) -> Tuple[ArrayLike, ArrayLike]:
     import numpy as np
     from ..disk import DefaultCatalogRead
-    from ..filenames import galcat, dndz
+    from ..filenames import galcat, dndz, selection_data
 
     # for a set of data catalogs, it adds them randomly to the random vector.
     # Here each data mock is used as a whole, and it can be replicated several times
@@ -209,7 +209,7 @@ def createRandom(config: str, legacy_algorithm: bool = False) -> None:
     )
 
     print("# Assigning redshifts and fluxes...")
-    if (input.cat_type is not "pinocchio") | (input.pinocchio_last_run is None):
+    if (input.cat_type != "pinocchio") | (input.pinocchio_last_run is None):
         redshift, flux = generate_random_simple(input)
     else:
         redshift, flux = generate_random_pinocchio(input)

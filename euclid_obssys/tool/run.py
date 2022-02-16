@@ -44,4 +44,5 @@ def run_tool():
     import fire
 
     result = fire.Fire(EuclidTool, name="euclid_obssys.tool")
-    raise SystemExit(0 if result else 1)
+    print(f"# Got result: {result}")
+    raise SystemExit(0 if result is None else 1)

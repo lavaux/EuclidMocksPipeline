@@ -58,7 +58,7 @@ def tags(pars: object, runstart: int, runstop: int, redshift: Tuple[float, float
     if pars.shuffled_fluxes:
         taglist["shuffled"] = "shuffled"
 
-    if pars.cat_type is "pinocchio":
+    if pars.cat_type == "pinocchio":
         if runstart is None:
             taglist["cat_type"] = "{}".format(pars.pinocchio_kernel)
         else:
@@ -115,10 +115,10 @@ def build_fname(
     """
 
     # if needed, adds a / to the requested directory file
-    if thisdir[-1] is not "/":
+    if thisdir[-1] != "/":
         thisdir += "/"
     # if needed, puts '.' at the beginning of ext
-    if ext is not None and ext[0] is not ".":
+    if ext is not None and ext[0] != ".":
         ext = "." + ext
 
     # the root directory is either the repository or the project directory
@@ -148,7 +148,7 @@ def build_fname(
         tag = mytags[element]
         if element in tag_filter and element not in exclude and tag is not None:
             if not first:
-                if tag[0] is not "_":
+                if tag[0] != "_":
                     tag = "_" + tag
             first = False
             fname += tag
@@ -284,11 +284,11 @@ def galcat_kernel(pars):
     """
     kernel for galaxy catalog name
     """
-    if pars.cat_type is "flagship":
+    if pars.cat_type == "flagship":
         tag_filter = ["cat_type", "query", "footp", "lf_model"]
-    elif pars.cat_type is "sdhod":
+    elif pars.cat_type == "sdhod":
         tag_filter = ["cat_type", "query", "footp", "other", "lf_model", "cm"]
-    elif pars.cat_type is "pinocchio":
+    elif pars.cat_type == "pinocchio":
         tag_filter = ["cat_type", "footp", "other", "lf_model", "cm"]
     else:
         print("ERROR: unrecognised cat_type in configuration file")
