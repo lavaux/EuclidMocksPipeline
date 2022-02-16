@@ -4,10 +4,18 @@
 ################################################################################
 from . import register_view_tool
 from ..config import readConfig
+from typing import Optional
 
 
 @register_view_tool
-def dn_dz(config: str):
+def dn_dz(config: str, second_dndz_fname: Optional[str] = None, check_with_random: bool = True, completeness: bool = True):
+    """
+    Plot the dn_dz(z) relation for the mock generated using the `config` argument.
+    Args:
+      second_dndz_fname (str):
+      check_with_random (bool): Check the completeness against the random catalogs
+      completeness (bool):
+    """
     from astropy.io import fits
     import matplotlib
 
@@ -27,10 +35,7 @@ def dn_dz(config: str):
     # special behaviour
     labd = "lookup"
     labs = "complete"
-    second_dndz_fname = None
     # second_dndz_fname=input.outdir+'NumberCounts/dndz_flagship_8614_BenSC8_m3_smL5_truez.fits'
-    CHECK_WITH_RANDOM = True
-    COMPLETENESS = True
 
     # survey footprint in equatorial coordinate
     footprint_res, footprint_zrange, sky_fraction, footprint = input.read_footprint()
@@ -146,7 +151,7 @@ def dn_dz(config: str):
             c="b",
         )
 
-    if CHECK_WITH_RANDOM:
+    if check_with_random:
         fname = filenames.random(input)
         print(f"Reading random catalog {fname}...")
         with DefaultCatalogRead(fname) as store:
@@ -188,7 +193,7 @@ def dn_dz(config: str):
     plt.savefig(plot_fname)
     print(f"## written image in file {plot_fname}")
 
-    if COMPLETENESS and second_dndz_fname is not None:
+    if completeness and second_dndz_fname is not None:
 
         plt.figure()
         plt.plot(dndz["z_center"], dndz["N_gal"] / dndz2["N_gal"])
