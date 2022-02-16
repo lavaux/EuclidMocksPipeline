@@ -146,7 +146,7 @@ def generate_random_pinocchio(input: dict) -> Tuple[ArrayLike, ArrayLike]:
                     )
                 )
                 with DefaultCatalogRead(selection_data(input, myrun)) as selstore:
-                    sel = sel["SELECTION"]["SELECTION"]
+                    sel = selstore["SELECTION"]["SELECTION"]
                 data_redshift = datacat[input.redshift_key][sel]
                 data_flux = datacat[input.flux_key][sel]
             else:
