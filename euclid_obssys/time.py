@@ -3,7 +3,8 @@ import functools
 import time
 
 
-current_contexts=[]
+current_contexts = []
+
 
 @contextlib.contextmanager
 def check_time(blockname):
@@ -24,6 +25,4 @@ def check_time_func(f):
     return new_f
 
 
-
-
-__all__=["check_time", "check_time_func"]
+__all__ = ["check_time", "check_time_func"]

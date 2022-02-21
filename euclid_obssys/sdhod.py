@@ -64,8 +64,8 @@ def Ncen(sdhod, logM, z):
 def lfcen(sdhod, logM, z):
 
     with check_time("digitize"):
-      mass_index = np.digitize(logM, sdhod["M_bins"][0]) - 1
-      z_index = np.digitize(z, sdhod["z_bins"][0]) - 1
+        mass_index = np.digitize(logM, sdhod["M_bins"][0]) - 1
+        z_index = np.digitize(z, sdhod["z_bins"][0]) - 1
 
     try:
         # Reassignement of the out of bound indexes
