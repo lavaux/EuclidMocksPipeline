@@ -8,6 +8,9 @@ import sys
 from typing import Optional
 
 
+# Somebody aliased 'type' hereinbelow.
+typeof = type
+
 def write_catalog_LE3(
     input: dict,
     fname: str,
@@ -44,6 +47,7 @@ def write_catalog_LE3(
                 ["WEIGHT", -1, "f8"],
                 ["DENSITY", w, "f8"],
             ]
+            coord = "EQUATORIAL"
         elif coord == "CARTESIAN":
             columns = [
                 ["SOURCE_ID", -1, "f8"],
@@ -53,6 +57,8 @@ def write_catalog_LE3(
                 ["WEIGHT", -1, "f8"],
                 ["DENSITY", w, "f8"],
             ]
+        else:
+           raise ValueError("Unknown coordinate type")
 
         header_keywords = {
             "TELESCOP": "EUCLID",
@@ -60,7 +66,7 @@ def write_catalog_LE3(
             "FILENAME": fname,
             "CAT_ID": "MOCK",
             "COORD": coord,
-            "ANGLE": "DEGREES",
+            "ANGLE": "DEG",
         }
 
         extension = "CATALOG"
@@ -86,7 +92,7 @@ def write_catalog_LE3(
         keep_table = {}
         for c in columns:
             # if required but not existing (-1) fill with ones
-            if c[1] is -1:
+            if typeof(c[1]) == int and c[1] == -1:
                 # add tmp column with correct name and position, bu only ones
                 print(str("+  -Col '%s' filled" % c[0]))
                 keep_table[c[0]] = np.ones_like(columns[1][1], dtype=np.float64)
@@ -198,7 +204,7 @@ def writeCatalogs4LE3(config: str) -> None:
 
     r1 = input.pinocchio_first_run
     r2 = input.pinocchio_last_run
-    if input.cat_type is "pinocchio":
+    if input.cat_type == "pinocchio":
         n1 = r1
         if r2 is not None:
             n2 = r2
@@ -262,7 +268,7 @@ def writeCatalogs4LE3(config: str) -> None:
 
         del randomcat
 
-    if input.cat_type is not "pinocchio":
+    if input.cat_type != "pinocchio":
         toprocess = [None]
     else:
         toprocess = range(n1, n2 + 1)
