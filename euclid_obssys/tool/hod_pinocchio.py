@@ -10,7 +10,7 @@ from ..config import readConfig
 def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> None:
     from astropy.io import fits
     import numpy as np
-    from .. import NFW, utils, sdhod, filenames
+    from .. import NFW, utils, sdhod, filenames, time
     from .. import match_pinocchio_masses as match
     from colossus.halo import concentration
     from scipy.stats import poisson
@@ -19,6 +19,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
     import healpy as hp
     import sys
     import os.path
+    import numexpr as ne
 
     input = readConfig(config)
 
@@ -100,32 +101,35 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         print("# Applying the HOD")
         # this implements the calibration based on clustering-matched or abundance-matched halos
-        logM = match.logFSmasses(Mass, z)
-        if input.MASS_SHIFT is not None:
+        with time.check_time("HOD"):
+           logM = match.logFSmasses(Mass, z)
+           if input.MASS_SHIFT is not None:
 
-            # number of central and satellite galaxies with clustering-matched masses
-            mass_shift = input.MASS_SHIFT[0] + (1.0 - z) * input.MASS_SHIFT[1]
-            factor = match.correct_number_density(mass_shift, z)
-            Ncen = sdhod.Ncen(hodtable, logM - mass_shift, z) * factor
-            Nsat_a = sdhod.Nsat(hodtable, logM - mass_shift, z) * factor
+             # number of central and satellite galaxies with clustering-matched masses
+             mass_shift = input.MASS_SHIFT[0] + (1.0 - z) * input.MASS_SHIFT[1]
+             factor = match.correct_number_density(mass_shift, z)
+             Ncen = sdhod.Ncen(hodtable, logM - mass_shift, z) * factor
+             Nsat_a = sdhod.Nsat(hodtable, logM - mass_shift, z) * factor
 
-        else:
+           else:
 
-            # number of central and satellite galaxies with abundance-matched masses
-            Ncen = sdhod.Ncen(hodtable, logM, z)
-            Nsat_a = sdhod.Nsat(hodtable, logM, z)
+             # number of central and satellite galaxies with abundance-matched masses
+             Ncen = sdhod.Ncen(hodtable, logM, z)
+             Nsat_a = sdhod.Nsat(hodtable, logM, z)
 
         print("# Random sampling the Centrals")
-        hostCentral = np.random.rand(Nhalos) <= Ncen
-        totCentrals = hostCentral.sum()
+        with time.check_time("Random sampling Centrals"):
+           hostCentral = np.random.rand(Nhalos) <= Ncen
+           totCentrals = hostCentral.sum()
 
         print("There will be {} central galaxies".format(totCentrals))
 
         print("# Random sampling the Satellites")
-        Nsat = poisson.rvs(Nsat_a)
-        totSat = Nsat.sum()
-        hostSat = Nsat > 0
-        del Nsat_a
+        with time.check_time("Random sampling satellites"):
+           Nsat = poisson.rvs(Nsat_a)
+           totSat = Nsat.sum()
+           hostSat = Nsat > 0
+           del Nsat_a
 
         print("There will be {} satellite galaxies".format(totSat))
 
@@ -150,28 +154,36 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
         cid = np.arange(Ngal)
 
         print("# Working on the {} Centrals".format(totCentrals))
-        ra_gal[:totCentrals] = ra[hostCentral]
-        dec_gal[:totCentrals] = dec[hostCentral]
-        rgal[:totCentrals] = dist[hostCentral]
-        cos_dec = np.cos(dec_gal[:totCentrals])
-        xgal[:totCentrals] = dist[hostCentral] * cos_dec * np.cos(ra_gal[:totCentrals])
-        ygal[:totCentrals] = dist[hostCentral] * cos_dec * np.sin(ra_gal[:totCentrals])
-        zgal[:totCentrals] = dist[hostCentral] * np.sin(dec_gal[:totCentrals])
+        with time.check_time("Centrals"):
+          with time.check_time("RA"):
+            ra_gal[:totCentrals] = ra[hostCentral]
+          with time.check_time("DEC"):
+            dec_gal[:totCentrals] = dec[hostCentral]
+          with time.check_time("dist"):
+            rgal[:totCentrals] = dist[hostCentral]
+          with time.check_time("cos_dec"):
+            cos_dec = np.cos(dec_gal[:totCentrals])
+          with time.check_time("xyzgal"):
+            xgal[:totCentrals] = dist[hostCentral] * cos_dec * np.cos(ra_gal[:totCentrals])
+            ygal[:totCentrals] = dist[hostCentral] * cos_dec * np.sin(ra_gal[:totCentrals])
+            zgal[:totCentrals] = dist[hostCentral] * np.sin(dec_gal[:totCentrals])
 
-        vlosgal[:totCentrals] = vlos[hostCentral]
-        true_zgal[:totCentrals] = z[hostCentral]
-        halo_m[:totCentrals] = Mass[hostCentral]
+          with time.check_time("leftovers"):
+            vlosgal[:totCentrals] = vlos[hostCentral]
+            true_zgal[:totCentrals] = z[hostCentral]
+            halo_m[:totCentrals] = Mass[hostCentral]
 
-        if input.MASS_SHIFT is not None:
-            log10f[:totCentrals] = sdhod.lfcen(
-                hodtable,
-                logM[hostCentral] - mass_shift[hostCentral],
-                true_zgal[:totCentrals],
-            )
-        else:
-            log10f[:totCentrals] = sdhod.lfcen(
+          with time.check_time("mass shift"):
+            if input.MASS_SHIFT is not None:
+               log10f[:totCentrals] = sdhod.lfcen(
+                 hodtable,
+                 logM[hostCentral] - mass_shift[hostCentral],
+                 true_zgal[:totCentrals],
+               )
+            else:
+              log10f[:totCentrals] = sdhod.lfcen(
                 hodtable, logM[hostCentral], true_zgal[:totCentrals]
-            )
+              )
 
         kind[:totCentrals] = 0
         haloid[:totCentrals] = name[hostCentral]
@@ -184,14 +196,16 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         kind[totCentrals:] = 1
 
-        MDelta = Mass[hostSat]
-        zhost = z[hostSat]
-        concentrations = np.array(
-            [
-                concentration.concentration(MM, "200c", z=ZZ, model=input.cmrelation)
-                for MM, ZZ in zip(MDelta, zhost)
-            ]
-        )
+        with time.check_time("Satellite"):
+          MDelta = Mass[hostSat]
+          zhost = z[hostSat]
+          with time.check_time("Concentrations"):
+            concentrations = np.array(
+              [
+                  concentration.concentration(MM, "200c", z=ZZ, model=input.cmrelation)
+                  for MM, ZZ in zip(MDelta, zhost)
+              ]
+            )
         RDelta = (3.0 * MDelta / 4.0 / np.pi / 200.0 / input.cosmo.rho_c(zhost)) ** (
             1.0 / 3.0
         )

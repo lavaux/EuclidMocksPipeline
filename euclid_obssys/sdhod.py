@@ -11,6 +11,8 @@ that give the luminosity of a central or satellite galaxy.
 
 """
 
+from .time import check_time, check_time_func
+
 
 def divide(a, b):
     filtro = b > 0
@@ -58,10 +60,12 @@ def Ncen(sdhod, logM, z):
 
 
 # log10 of the flux of the given central
+@check_time_func
 def lfcen(sdhod, logM, z):
 
-    mass_index = np.digitize(logM, sdhod["M_bins"][0]) - 1
-    z_index = np.digitize(z, sdhod["z_bins"][0]) - 1
+    with check_time("digitize"):
+      mass_index = np.digitize(logM, sdhod["M_bins"][0]) - 1
+      z_index = np.digitize(z, sdhod["z_bins"][0]) - 1
 
     try:
         # Reassignement of the out of bound indexes
