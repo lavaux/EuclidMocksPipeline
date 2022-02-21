@@ -12,6 +12,7 @@ that give the luminosity of a central or satellite galaxy.
 """
 
 from .time import check_time, check_time_func
+import numba as nb
 
 
 def divide(a, b):
@@ -68,23 +69,39 @@ def lfcen(sdhod, logM, z):
         z_index = np.digitize(z, sdhod["z_bins"][0]) - 1
 
     try:
-        # Reassignement of the out of bound indexes
-        mass_index[mass_index == sdhod["M_bins"][0].size - 1] = (
-            sdhod["M_bins"][0].size - 2
-        )
-        z_index[z_index == sdhod["z_bins"][0].size - 1] = sdhod["z_bins"][0].size - 2
-        # Getting the corresponding Flux inside the Inverse CDF
-        u = np.random.random(logM.size)
-        f = [
-            np.interp(
-                ui,
+      sdhod_cen_gauss = sdhod["n_cen_gaus"].astype(np.float64)
+      sdhod_f_bins = sdhod["f_bins"][0].astype(np.float64)
+
+      @nb.njit
+      def compute_f(result, u, z_index, mass_index):
+         N = len(u)
+         for i in range(N):
+           result[i]= np.interp(
+                u[i],
                 1
-                - sdhod["n_cen_gaus"][0, :, zi, mi] / sdhod["n_cen_gaus"][0, 0, zi, mi],
-                sdhod["f_bins"][0],
+                - sdhod_cen_gauss[0, :, z_index[i], mass_index[i]] / sdhod_cen_gauss[0, 0, z_index[i], mass_index[i]],
+                sdhod_f_bins,
             )
-            for ui, zi, mi in zip(u, z_index, mass_index)
-        ]
-        f = np.array(f)
+
+      # Reassignement of the out of bound indexes
+      mass_index[mass_index == sdhod["M_bins"][0].size - 1] = (
+            sdhod["M_bins"][0].size - 2
+      )
+      z_index[z_index == sdhod["z_bins"][0].size - 1] = sdhod["z_bins"][0].size - 2
+      # Getting the corresponding Flux inside the Inverse CDF
+      u = np.random.random(logM.size)
+#        f = [
+#            np.interp(
+#                ui,
+#                1
+#                - sdhod["n_cen_gaus"][0, :, zi, mi] / sdhod["n_cen_gaus"][0, 0, zi, mi],
+#                sdhod["f_bins"][0],
+#            )
+#            for ui, zi, mi in zip(u, z_index, mass_index)
+#        ]
+#        f = np.array(f)
+      f = np.zeros(len(u))
+      compute_f(f, u, z_index, mass_index)
 
     except TypeError:
 

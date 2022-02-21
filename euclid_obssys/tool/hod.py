@@ -204,6 +204,7 @@ def createSDHOD_Catalog(config: str) -> None:
     from scipy.stats import poisson
     import healpy as hp
     import numpy as np
+    import numba as nb
     from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
 
     input = readConfig(config)
@@ -322,14 +323,19 @@ def createSDHOD_Catalog(config: str) -> None:
 
     kind[totCentrals:] = 1
 
-    MDelta = Mass[hostSat]
-    z2 = c_z[hostSat]
-    concentrations = np.array(
-        [
-            concentration.concentration(MM, "200c", z=zz, model=input.cmrelation)
-            for MM, zz in zip(MDelta, z2)
-        ]
-    )
+    MDelta = Mass[hostSat].astype(np.float64)
+    z2 = c_z[hostSat].astype(np.float64)
+    model_name = input.cmrelation
+
+    @nb.jit(parallel=True)
+    def process_concentrations(Mdelta, z2, result):
+        N = len(z2)
+        for i in nb.prange(N):
+          result[i] = concentration.concentration(Mdelta[i], "200c", z=z2[i], model=model_name)
+
+    concentrations = np.zeros(len(z2))
+    process_concentration(Mdelta, z2, concentrations)
+
     RDelta = (3.0 * MDelta / 4.0 / np.pi / 200.0 / input.cosmo.rho_c(z2)) ** (1.0 / 3.0)
     RDelta /= 1e3  # To Mpc/h
 
