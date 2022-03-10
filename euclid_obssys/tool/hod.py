@@ -206,6 +206,8 @@ def createSDHOD_Catalog(config: str) -> None:
     import numpy as np
     import numba as nb
     from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
+    from dask import delayed
+    from dask.distributed import Client
 
     input = readConfig(config)
 
@@ -223,6 +225,9 @@ def createSDHOD_Catalog(config: str) -> None:
     print("# Reading the HOD table {}...".format(filenames.SDHOD(input)))
     with DefaultCatalogRead(filenames.SDHOD(input)) as in_file:
         hodtable = in_file["sdhod"]
+
+    print("# Starting Dask...")
+    client = Client()
 
     print("# Reading the halo catalog from {}...".format(filenames.master(input)))
     with DefaultCatalogRead(filenames.master(input)) as store:
@@ -327,14 +332,14 @@ def createSDHOD_Catalog(config: str) -> None:
     z2 = c_z[hostSat].astype(np.float64)
     model_name = input.cmrelation
 
-    @nb.jit(parallel=True)
-    def process_concentrations(Mdelta, z2, result):
-        N = len(z2)
-        for i in nb.prange(N):
-          result[i] = concentration.concentration(Mdelta[i], "200c", z=z2[i], model=model_name)
+    #@delayed
+    def process_concentrations(Mdelta, z2):
+       return concentration.concentration(Mdelta, "200c", z=z2, model=model_name)
 
-    concentrations = np.zeros(len(z2))
-    process_concentration(Mdelta, z2, concentrations)
+    MDelta_da = da.array(MDelta).rechunk()
+    z2_da = da.array(z2).rechunk()
+
+    concentrations = da.map_blocks(process_concentrations, Mdelta_da, z2_da, dtype=float).compute()
 
     RDelta = (3.0 * MDelta / 4.0 / np.pi / 200.0 / input.cosmo.rho_c(z2)) ** (1.0 / 3.0)
     RDelta /= 1e3  # To Mpc/h
