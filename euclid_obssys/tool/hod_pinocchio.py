@@ -20,6 +20,8 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
     import sys
     import os.path
     import numexpr as ne
+    from dask import delayed
+    from dask.distributed import Client
 
     input = readConfig(config)
 
@@ -200,18 +202,19 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         kind[totCentrals:] = 1
 
+        def process_concentrations(Mdelta, z2):
+           return concentration.concentration(Mdelta, "200c", z=z2, model=input.cmrelation)
+
         with time.check_time("Satellite"):
             MDelta = Mass[hostSat]
             zhost = z[hostSat]
+
+            MDelta_da = da.array(MDelta).rechunk()
+            zhost_da = da.array(zhost).rechunk()
+
             with time.check_time("Concentrations"):
-                concentrations = np.array(
-                    [
-                        concentration.concentration(
-                            MM, "200c", z=ZZ, model=input.cmrelation
-                        )
-                        for MM, ZZ in zip(MDelta, zhost)
-                    ]
-                )
+                concentrations = da.map_blocks(process_concentrations, Mdelta_da, zhost_da, dtype=float).compute()
+
         RDelta = (3.0 * MDelta / 4.0 / np.pi / 200.0 / input.cosmo.rho_c(zhost)) ** (
             1.0 / 3.0
         )

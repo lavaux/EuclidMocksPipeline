@@ -1,5 +1,6 @@
 import numpy as np
 from astropy.io import fits
+import numba as nb
 
 """
 Given a measured SDHOD, this library provides the 
