@@ -12,7 +12,6 @@ that give the luminosity of a central or satellite galaxy.
 """
 
 from .time import check_time, check_time_func
-import numba as nb
 
 
 def divide(a, b):
