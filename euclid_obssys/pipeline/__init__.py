@@ -56,12 +56,6 @@ def _rreload(
                         blacklist,
                         reloaded_modules,
                     )
-    #        elif callable(attribute) and attribute.__module__ not in blacklist:
-    #            if attribute.__module__ is not None and attribute.__module__ not in sys.builtin_module_names and f"_{attribute.__module__}" not in sys.builtin_module_names:
-    #                if sys.modules[attribute.__module__] != base_module:
-    #                    if sys.modules[attribute.__module__] not in mdict:
-    #                        mdict[sys.modules[attribute.__module__]] = [attribute]
-    #                        reloaded_modules = _rreload(sys.modules[attribute.__module__], paths, mdict, base_module, blacklist, reloaded_modules)
     try:
         reload(module)
     except NotImplementedError:
@@ -73,7 +67,7 @@ def _fillup_symbols():
     global __all__, _module_symbols
     _module_symbols.update({f.__name__: f for f in tool.get_tools()})
     __all__.clear()
-    __all__.append(["refresh"])
+    __all__.append("refresh")
     __all__.extend([f.__name__ for f in tool.get_tools()])
 
 
@@ -81,6 +75,8 @@ def refresh():
     from importlib import reload
 
     global tool, tool_run
+
+    tool.clear_tools()
 
     tool = reload(tool)
     print(_rreload(tool_run))

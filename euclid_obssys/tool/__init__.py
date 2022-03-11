@@ -7,6 +7,7 @@ _dask_started = False
 
 
 def register_tool(function):
+    print(f"Register {function.__name__}")
     def new_f(*args, **kwargs):
         try:
             return function(*args, **kwargs)
@@ -33,6 +34,9 @@ def need_dask(function):
         return function(*args, **kwargs)
 
     return wraps(function)(new_f)
+
+def clear_tools():
+    _toolbox.clear()
 
 def get_tools():
     return _toolbox
