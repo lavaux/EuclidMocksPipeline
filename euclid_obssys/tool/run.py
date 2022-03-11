@@ -32,7 +32,6 @@ class EuclidTool(object):
         * createSmoothHOD
         * createSDHOD_Catalog
         * createRandom
-
     """
 
     def __init__(self):
@@ -42,6 +41,10 @@ class EuclidTool(object):
 
 def run_tool():
     import fire
+
+    EuclidTool.__doc__ += "More tools available are:\n"
+    for tool in get_tools():
+      EuclidTool.__doc__ += f"        * {tool.__name__}\n"
 
     result = fire.Fire(EuclidTool, name="euclid_obssys.tool")
     print(f"# Got result: {'OK' if result is None else result}")

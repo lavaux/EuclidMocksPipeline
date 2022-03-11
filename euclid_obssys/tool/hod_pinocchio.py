@@ -2,7 +2,7 @@
 ### Authors: Tiago Castro, Pierluigi Monaco, Guilhem Lavaux                  ###
 ###                                                                          ###
 ################################################################################
-from . import register_tool
+from . import register_tool, need_dask
 from ..config import readConfig
 
 
@@ -15,7 +15,16 @@ def process_concentrations(Mdelta, z2, cmrelation, cosmo):
 
 
 @register_tool
+@need_dask
 def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> None:
+    """Create a HOD catalog from a set of Pinocchio runs.
+
+    Args:
+        config (str): Pipeline configuration file.
+        starting_run (int): ID of the first Pinocchio run to consider
+        last_run (int): ID of the last Pinocchio run to consider
+    """
+
     from astropy.io import fits
     import numpy as np
     from .. import NFW, utils, sdhod, filenames, time
@@ -34,9 +43,6 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
     from dask.distributed import Client
 
     input = readConfig(config)
-
-    print("# Start dask")
-    client = Client()
 
     print(f"# Running createSDHODfromPinocchio.py from Pinocchio with {config}")
 
