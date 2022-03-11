@@ -31,10 +31,15 @@ def _rreload(
     if base_module is None:
         base_module = module
     if blacklist is None:
-        blacklist = ["importlib", "typing"]
+        blacklist = ["importlib", "typing", "_frozen_importlib"]
     if reloaded_modules is None:
         reloaded_modules = []
-    reload(module)
+    if not module.__name__.startswith("euclid_obssys"):
+       return reloaded_modules
+    try:
+        reload(module)
+    except NotImplementedError:
+        pass
     reloaded_modules.append(module.__name__)
     for attribute_name in dir(module):
         attribute = getattr(module, attribute_name)
@@ -57,7 +62,10 @@ def _rreload(
     #                    if sys.modules[attribute.__module__] not in mdict:
     #                        mdict[sys.modules[attribute.__module__]] = [attribute]
     #                        reloaded_modules = _rreload(sys.modules[attribute.__module__], paths, mdict, base_module, blacklist, reloaded_modules)
-    reload(module)
+    try:
+        reload(module)
+    except NotImplementedError:
+        pass
     return reloaded_modules
 
 
