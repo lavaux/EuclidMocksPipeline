@@ -6,6 +6,14 @@ from . import register_tool
 from ..config import readConfig
 
 
+def process_concentrations(Mdelta, z2, cmrelation, cosmo):
+    from colossus.halo import concentration
+    from colossus.cosmology import cosmology
+
+    cosmology.setCurrent(cosmo)
+    return concentration.concentration(Mdelta, "200c", z=z2, model=cmrelation)
+
+
 @register_tool
 def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> None:
     from astropy.io import fits
@@ -13,6 +21,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
     from .. import NFW, utils, sdhod, filenames, time
     from .. import match_pinocchio_masses as match
     from colossus.halo import concentration
+    from colossus.cosmology import cosmology
     from scipy.stats import poisson
     from .. import pinocchio as rp
     from ..disk import DefaultCatalogWrite
@@ -21,9 +30,13 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
     import os.path
     import numexpr as ne
     from dask import delayed
+    import dask.array as da
     from dask.distributed import Client
 
     input = readConfig(config)
+
+    print("# Start dask")
+    client = Client()
 
     print(f"# Running createSDHODfromPinocchio.py from Pinocchio with {config}")
 
@@ -39,12 +52,13 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
     print("# Reading the HOD table {}...".format(filenames.SDHOD(input)))
     hodtable = fits.getdata(filenames.SDHOD(input))
+    hodtable_da = da.array(hodtable)
 
     for myrun in np.arange(starting_run, last_run + 1):
 
         # reading the PLC
 
-        print("\n# starting with catalog %d\n" % myrun)
+        print("\n# -- starting with catalog %d --" % myrun)
 
         pinfname = filenames.pinplc(input, myrun)
         if not os.path.isfile(pinfname):
@@ -202,18 +216,22 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         kind[totCentrals:] = 1
 
-        def process_concentrations(Mdelta, z2):
-           return concentration.concentration(Mdelta, "200c", z=z2, model=input.cmrelation)
-
         with time.check_time("Satellite"):
             MDelta = Mass[hostSat]
             zhost = z[hostSat]
 
-            MDelta_da = da.array(MDelta).rechunk()
+            Mdelta_da = da.array(MDelta).rechunk()
             zhost_da = da.array(zhost).rechunk()
 
             with time.check_time("Concentrations"):
-                concentrations = da.map_blocks(process_concentrations, Mdelta_da, zhost_da, dtype=float).compute()
+                concentrations = da.map_blocks(
+                    process_concentrations,
+                    Mdelta_da,
+                    zhost_da,
+                    input.cmrelation,
+                    cosmology.getCurrent(),
+                    dtype=float,
+                ).compute()
 
         RDelta = (3.0 * MDelta / 4.0 / np.pi / 200.0 / input.cosmo.rho_c(zhost)) ** (
             1.0 / 3.0
@@ -233,19 +251,27 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         conv = np.pi / 180.0
 
-        randr = np.array(
-            [
-                NFW.getr(c, u)[0]
-                for c, u in zip(concentrations[myhalo], np.random.rand(totSat))
-            ]
+        concentrations_da = da.array(concentrations[myhalo]).rechunk()
+        randr_da = da.map_blocks(
+            lambda c, u: np.array(list(NFW.getr(c0, u0)[0] for c0, u0 in zip(c, u))),
+            concentrations_da,
+            da.random.random(totSat),
         )
-        randt, randp = utils.randomSpherePoint(totSat)
-        randv = np.array(
-            [
-                utils.circularVelocity(c, r)
-                for c, r in zip(concentrations[myhalo], randr)
-            ]
-        ) * np.sqrt(MDelta[myhalo] / RDelta[myhalo])
+        with time.check_time("randt"):
+            randt, randp = utils.randomSpherePoint(totSat)
+        with time.check_time("randv"):
+            randv_da = da.map_blocks(
+                lambda c, r: np.array(
+                    list(utils.circularVelocity(c0, r0) for c0, r0 in zip(c, r))
+                ),
+                concentrations_da,
+                randr_da,
+            )
+            randv_da = randv_da * da.sqrt(da.array(MDelta[myhalo] / RDelta[myhalo]))
+
+        with time.check_time("randr+randv"):
+            randv = randv_da.compute()
+            randr = randr_da.compute()
 
         print("# random numbers done")
         print("# updating spatial positions...")
@@ -296,16 +322,19 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
         halo_m[totCentrals:] = Mass[hostSat][myhalo]
         true_zgal[totCentrals:] = z[hostSat][myhalo]
 
-        if input.MASS_SHIFT is not None:
-            log10f[totCentrals:] = sdhod.lfsat(
-                hodtable,
-                logM[hostSat][myhalo] - mass_shift[hostSat][myhalo],
-                true_zgal[totCentrals:],
-            )
-        else:
-            log10f[totCentrals:] = sdhod.lfsat(
-                hodtable, logM[hostSat][myhalo], true_zgal[totCentrals:]
-            )
+        with time.check_time("log10f"):
+            if input.MASS_SHIFT is not None:
+                log10f[totCentrals:] = sdhod.lfsat(
+                    hodtable,
+                    logM[hostSat][myhalo] - mass_shift[hostSat][myhalo],
+                    true_zgal[totCentrals:],
+                )
+            else:
+                log10f[totCentrals:] = da.map_blocks(
+                    lambda lM, zg: (sdhod.lfsat(hodtable_da, lM, zg)),
+                    da.array(logM[hostSat][myhalo]).rechunk(),
+                    da.array(true_zgal[totCentrals:]).rechunk(),
+                ).compute()
 
         halo_m = np.log10(halo_m)
         obs_zgal = true_zgal + vlosgal / input.SPEEDOFLIGHT * (1.0 + true_zgal)
@@ -367,6 +396,6 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
             catalog["id"] = cid
             catalog["halo_id"] = haloid
 
-        print("# done with catalog %d\n" % myrun)
+        print(f"# -- done with catalog {myrun} --")
 
     print("# !!DONE!!")
