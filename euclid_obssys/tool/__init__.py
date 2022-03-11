@@ -4,12 +4,16 @@ from functools import wraps
 
 _toolbox = []
 _dask_started = False
+_debug = False
 
 
 def register_tool(function):
-    print(f"Register {function.__name__}")
+    global _debug
+    if _debug:
+        print(f"Register {function.__name__}")
     def new_f(*args, **kwargs):
         try:
+            print(f"# Starting up '{function.__name__}'")
             return function(*args, **kwargs)
         except Exception as e:
             print(f"Error while running {function.__name__}.")

@@ -224,16 +224,18 @@ def flagcat(pars):
 
 
 def sel_input(pars, use_data: bool) -> str:
+    import sys
+
     if use_data:
         if pars.selection_data_tag is None:
             print("No selection specified for galaxy catalog, exiting")
-            sys.exit(0)
+            sys.exit(1)
         else:
             sel_input_tag = "sel_data"
     else:
         if pars.selection_random_tag is None:
             print("No selection specified for random catalog, exiting")
-            sys.exit(0)
+            sys.exit(1)
         else:
             sel_input_tag = "sel_rand"
 

@@ -34,7 +34,7 @@ skip_tags = ["alpha", "sm", "lf_model", "cm", "rsd", "ngrid", "Lbox"]
 # None indicates to read the full Flagship octant
 # footprint_tag = '100sqdeg'
 # footprint_tag = None
-footprint_tag = "BenSC8"
+footprint_tag = FOOTTAG #"BenSC8"
 
 
 # PINOCCHIO

@@ -7,7 +7,14 @@ from ..config import readConfig
 
 
 @register_tool
-def createFootprint(outdir: str = "Repo") -> None:
+def createFootprint(outdir: str = "Repo", tag: str = "100sqdeg", size: float = 10.0) -> None:
+    """Create a survey footprint on the sky, starting from the north pole.
+    
+    Args:
+        * outdir (str): output repository directory for the footprint
+        * tag (str): Tag for the footprint
+        * size (float): Size in degrees of the footprint
+    """
     import numpy as np
     import matplotlib
 
@@ -21,13 +28,13 @@ def createFootprint(outdir: str = "Repo") -> None:
 
     # these are the parameters of the footprint, please copy them to the input file
 
-    footprint_fname = path.join(outdir, "Footprints", "100sqdeg.fits")
+    footprint_fname = path.join(outdir, "Footprints", f"{tag}.fits")
     footprint_res = 2048
-    footprint_tag = "100sqdeg"
+    footprint_tag = tag
     footprint_zrange = [0.8, 2.0]
 
     # linear size of the field in radians
-    size = 10.0 * np.pi / 180.0
+    size *= np.pi / 180.0
 
     # reddening map for checking where the footprint has been placed
     # reddening = hp.ud_grade(hp.read_map(outdir+'ExtinctionMaps/HFI_CompMap_ThermalDustModel_2048_R1.20.fits', field=2), footprint_res)
@@ -64,7 +71,7 @@ def createFootprint(outdir: str = "Repo") -> None:
     foot2 = reddening.copy()
     foot2[footprint] *= 2
     hp.mollview(foot2, max=1000)
-    plt.savefig(path.join(outdir, "Footprints", "100sqdeg.png"))
+    plt.savefig(path.join(outdir, "Footprints", f"{tag}.png"))
 
     # writes footprint on fits file
     print("## writing footprint on file {}".format(footprint_fname))
