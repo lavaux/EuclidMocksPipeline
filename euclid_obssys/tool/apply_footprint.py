@@ -56,7 +56,7 @@ def applyFootprintToMaster(config: str) -> None:
 
     pix = hp.ang2pix(footprint_res, theta_eq, phi_eq)
     foot_sel = np.zeros_like(zused, dtype=bool)
-    fp_small = footprint[pix]
+    fp_small = footprint[pix]==1
     foot_sel[redshift_sel] = fp_small
 
     Nextract = foot_sel.sum()

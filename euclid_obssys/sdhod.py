@@ -178,7 +178,7 @@ def lfsat(sdhod, logM, z):
         z_index[z_index == sdhod["z_bins"][0].size - 1] = sdhod["z_bins"][0].size - 2
         # Getting the corresponding Flux inside the Inverse CDF
         u = np.random.random(logM.size)
-        f = [
+        f = np.array([
             np.interp(
                 ui,
                 1
@@ -186,7 +186,7 @@ def lfsat(sdhod, logM, z):
                 sdhod["f_bins"][0],
             )
             for ui, zi, mi in zip(u, z_index, mass_index)
-        ]
+        ])
 
     except TypeError:
 

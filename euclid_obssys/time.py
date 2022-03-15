@@ -9,6 +9,7 @@ current_contexts = []
 @contextlib.contextmanager
 def check_time(blockname):
     current_contexts.append(blockname)
+    print(f"TIME: Start '{'/'.join(current_contexts)}'....")
     _t0 = time.perf_counter()
     yield
     _t1 = time.perf_counter()

@@ -32,7 +32,7 @@ def need_dask(function):
         global _dask_started
         if not _dask_started:
            print("# Starting dask")
-           client = Client()
+           client = Client(n_workers=8)
            _dask_started = True
 
         return function(*args, **kwargs)

@@ -23,7 +23,7 @@ def createSelection(
 
     def extinction_curve(z):
 
-        if sel_input.extinction_curve is "standard":
+        if sel_input.extinction_curve == "standard":
             wavel = 6562.8 * (1.0 + z)
             mwl = np.array(
                 [
