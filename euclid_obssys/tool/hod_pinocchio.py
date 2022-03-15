@@ -6,6 +6,9 @@ from . import register_tool, need_dask
 from ..config import readConfig
 
 
+chunks_lfsat=1000000
+chunks_c=1000000
+
 def process_concentrations(Mdelta, z2, cmrelation, cosmo):
     from colossus.halo import concentration
     from colossus.cosmology import cosmology
@@ -106,7 +109,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         print("# Filtering the catalog for halos in the footprint")
         pix = hp.ang2pix(footprint_res, dec, ra)
-        foot_filter = footprint[pix]
+        foot_filter = footprint[pix]==1
         dec = dec[foot_filter]
         ra = ra[foot_filter]
         z = z[foot_filter]
@@ -132,12 +135,14 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
                 factor = match.correct_number_density(mass_shift, z)
                 Ncen = sdhod.Ncen(hodtable, logM - mass_shift, z) * factor
                 Nsat_a = sdhod.Nsat(hodtable, logM - mass_shift, z) * factor
+                print(f"# Nsat_a total = {Nsat_a.sum()}, factor = {factor}, mass_shift = {mass_shift}")
 
             else:
 
                 # number of central and satellite galaxies with abundance-matched masses
                 Ncen = sdhod.Ncen(hodtable, logM, z)
                 Nsat_a = sdhod.Nsat(hodtable, logM, z)
+                print(f"# (MASS_SHIFT none) Nsat_a total = {Nsat_a.sum()}")
 
         print("# Random sampling the Centrals")
         with time.check_time("Random sampling Centrals"):
@@ -153,7 +158,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
             hostSat = Nsat > 0
             del Nsat_a
 
-        print("There will be {} satellite galaxies".format(totSat))
+        print("# There will be {} satellite galaxies".format(totSat))
 
         # Total number of Galaxies Sat+Cen
         Ngal = int(totSat + totCentrals)
@@ -226,8 +231,8 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
             MDelta = Mass[hostSat]
             zhost = z[hostSat]
 
-            Mdelta_da = da.array(MDelta).rechunk()
-            zhost_da = da.array(zhost).rechunk()
+            Mdelta_da = da.array(MDelta).rechunk(chunks=chunks_c)
+            zhost_da = da.array(zhost).rechunk(chunks=chunks_c)
 
             with time.check_time("Concentrations"):
                 concentrations = da.map_blocks(
@@ -237,7 +242,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
                     input.cmrelation,
                     cosmology.getCurrent(),
                     dtype=float,
-                ).compute()
+                )
 
         RDelta = (3.0 * MDelta / 4.0 / np.pi / 200.0 / input.cosmo.rho_c(zhost)) ** (
             1.0 / 3.0
@@ -257,15 +262,16 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         conv = np.pi / 180.0
 
-        concentrations_da = da.array(concentrations[myhalo]).rechunk()
+        concentrations_da = concentrations[myhalo].rechunk(chunks=chunks_c)
         randr_da = da.map_blocks(
             lambda c, u: np.array(list(NFW.getr(c0, u0)[0] for c0, u0 in zip(c, u))),
-            concentrations_da,
-            da.random.random(totSat),
+            concentrations_da.rechunk(chunks=chunks_c),
+            da.random.random(totSat).rechunk(chunks=chunks_c),
         )
         with time.check_time("randt"):
             randt, randp = utils.randomSpherePoint(totSat)
         with time.check_time("randv"):
+            print(randr_da.shape, concentrations_da.shape)
             randv_da = da.map_blocks(
                 lambda c, r: np.array(
                     list(utils.circularVelocity(c0, r0) for c0, r0 in zip(c, r))
@@ -273,11 +279,13 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
                 concentrations_da,
                 randr_da,
             )
-            randv_da = randv_da * da.sqrt(da.array(MDelta[myhalo] / RDelta[myhalo]))
+            print(randv_da.shape)
+            randv_da = randv_da * da.sqrt(da.array(MDelta[myhalo] / RDelta[myhalo]).rechunk(chunks=chunks_c))
+            print(randv_da.shape)
 
         with time.check_time("randr+randv"):
-            randv = randv_da.compute()
             randr = randr_da.compute()
+            randv = randv_da.compute()
 
         print("# random numbers done")
         print("# updating spatial positions...")
@@ -330,16 +338,19 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
 
         with time.check_time("log10f"):
             if input.MASS_SHIFT is not None:
-                log10f[totCentrals:] = sdhod.lfsat(
-                    hodtable,
-                    logM[hostSat][myhalo] - mass_shift[hostSat][myhalo],
-                    true_zgal[totCentrals:],
-                )
+                log10f[totCentrals:] = da.map_blocks(
+                    lambda lM, ms, zg: (sdhod.lfsat(hodtable_da.compute(), lM - ms, zg)),
+                    da.array(logM[hostSat][myhalo]).rechunk(chunks=chunks_lfsat),
+                    da.array(mass_shift[hostSat][myhalo]).rechunk(chunks=chunks_lfsat),
+                    da.array(true_zgal[totCentrals:]).rechunk(chunks=chunks_lfsat),
+                    dtype=np.float,
+                ).compute()
             else:
                 log10f[totCentrals:] = da.map_blocks(
-                    lambda lM, zg: (sdhod.lfsat(hodtable_da, lM, zg)),
-                    da.array(logM[hostSat][myhalo]).rechunk(),
-                    da.array(true_zgal[totCentrals:]).rechunk(),
+                    lambda lM, zg: (sdhod.lfsat(hodtable_da.compute(), lM, zg)),
+                    da.array(logM[hostSat][myhalo]).rechunk(chunks=chunks_lfsat),
+                    da.array(true_zgal[totCentrals:]).rechunk(chunks=chunks_lfsat),
+                    dtype=np.float,
                 ).compute()
 
         halo_m = np.log10(halo_m)
