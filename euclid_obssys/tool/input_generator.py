@@ -9,6 +9,7 @@ def generateConfig(
     lf_model: int = 1,
     rsd: bool = False,
     type: str = "sdhod",
+    selection: str = "MWext",
     footprintTag: str = None,
 ) -> None:
     """This generate a configuration file for the Euclid Observational systematics pipeline.
@@ -20,6 +21,7 @@ def generateConfig(
         rsd (bool, optional): Whether redshift space distortions must be applied. Defaults to False.
         o (str): [description]. Output configuration file Defaults to None.
         footprintTag (str): footprint to use , e.g. "100sqdeg"
+        selection (str): type of selection function to apply
         type (str, optional): Type of mock catalog to generate. Must be one of
             "sdhod", "flagship", "pinocchio", "box".
 
@@ -46,13 +48,14 @@ def generateConfig(
 
     replacements = {
         "REPODIR": repodir,
+        "PINOCCHIOREPO": "/euclid_data/pmonaco/Pinocchio/GeppettoFC",
         "PROJECTDIR": projectdir,
         "FOOTTAG": f'"{footprintTag}"' if not footprintTag is None else "None",
         "LFMODEL": repr(lf_model),
         "CATTYPE": type,
         "SHUFFLE": "False",
-        "SELDATA": "None",
-        "SELRAND": "None",
+        "SELDATA": f'"{selection}"' if selection != "None" else "None",
+        "SELRAND": f'"{selection}"' if selection != "None" else "None",
         "RSDFLAG": repr(rsd),
     }
 

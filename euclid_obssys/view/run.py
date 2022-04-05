@@ -26,4 +26,7 @@ class EuclidViewTool(object):
 def run_tool():
     import fire
 
-    fire.Fire(EuclidViewTool, name="euclid_obssys.view")
+    result = fire.Fire(EuclidViewTool, name="euclid_obssys.view")
+    print(f"# Got result: {'OK' if result is None else result}")
+    raise SystemExit(0 if result is None else 1)
+

@@ -12,6 +12,7 @@ def register_view_tool(function):
             print(f"Error while running {function.__name__}.")
             print(f"Exception was {e}")
             traceback.print_exc()
+            raise e
 
     new_f.__doc__ = function.__doc__
     new_f.__signature__ = inspect.signature(function)

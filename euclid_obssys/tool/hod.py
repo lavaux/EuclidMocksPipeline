@@ -2,8 +2,15 @@
 ### Authors: Tiago Castro, Pierluigi Monaco, Guilhem Lavaux                  ###
 ###                                                                          ###
 ################################################################################
-from . import register_tool
+from . import register_tool, need_dask
 from ..config import readConfig
+
+def process_concentrations(Mdelta, z2, cmrelation, cosmo):
+    from colossus.halo import concentration
+    from colossus.cosmology import cosmology
+
+    cosmology.setCurrent(cosmo)
+    return concentration.concentration(Mdelta, "200c", z=z2, model=cmrelation)
 
 
 @register_tool
@@ -187,6 +194,7 @@ def createSmoothHOD(config: str) -> None:
 
 
 @register_tool
+@need_dask
 def createSDHOD_Catalog(config: str) -> None:
     """Creates a galaxy catalog by
     populating the halos of the master catalog with galaxies, using the
@@ -207,7 +215,7 @@ def createSDHOD_Catalog(config: str) -> None:
     import numba as nb
     from euclid_obssys.disk import DefaultCatalogRead, DefaultCatalogWrite
     from dask import delayed
-    from dask.distributed import Client
+    import dask.array as da
 
     input = readConfig(config)
 
@@ -225,9 +233,6 @@ def createSDHOD_Catalog(config: str) -> None:
     print("# Reading the HOD table {}...".format(filenames.SDHOD(input)))
     with DefaultCatalogRead(filenames.SDHOD(input)) as in_file:
         hodtable = in_file["sdhod"]
-
-    print("# Starting Dask...")
-    client = Client()
 
     print("# Reading the halo catalog from {}...".format(filenames.master(input)))
     with DefaultCatalogRead(filenames.master(input)) as store:
@@ -332,14 +337,11 @@ def createSDHOD_Catalog(config: str) -> None:
     z2 = c_z[hostSat].astype(np.float64)
     model_name = input.cmrelation
 
-    #@delayed
-    def process_concentrations(Mdelta, z2):
-       return concentration.concentration(Mdelta, "200c", z=z2, model=model_name)
 
     MDelta_da = da.array(MDelta).rechunk()
     z2_da = da.array(z2).rechunk()
 
-    concentrations = da.map_blocks(process_concentrations, Mdelta_da, z2_da, dtype=float).compute()
+    concentrations = da.map_blocks(process_concentrations, MDelta_da, z2_da, model_name, cosmology.getCurrent(), dtype=float).compute()
 
     RDelta = (3.0 * MDelta / 4.0 / np.pi / 200.0 / input.cosmo.rho_c(z2)) ** (1.0 / 3.0)
     RDelta /= 1e3  # To Mpc/h

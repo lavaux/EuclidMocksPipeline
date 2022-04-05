@@ -41,7 +41,7 @@ footprint_tag = FOOTTAG #"BenSC8"
 # this should give the path to the repository where a set of pinocchio runs is stored
 # WITHOUT the final /
 # None if pinocchio runs are not used
-pinocchio_repo = "/euclid_data/pmonaco/Pinocchio/GeppettoFC"
+pinocchio_repo = "PINOCCHIOREPO"
 # this should give the kernel for the run names, without numbers
 pinocchio_kernel = "GeppettoFC"
 pinocchio_rotator = hp.Rotator(
@@ -65,7 +65,7 @@ MASS_SHIFT = [0.2, 0.2]
 lf_model = "3"
 logflux_limit = np.log10(2.0e-16)  # This is the nominal flux limit
 smoothing_length = 5  # Gaussian smoothing for the SDHOD and for dn/dz
-cat_type = "pinocchio"  # can be 'flagship', 'sdhod', 'pinocchio' or 'box'
+cat_type = "CATTYPE"  # can be 'flagship', 'sdhod', 'pinocchio' or 'box'
 shuffled_fluxes = True
 
 deltazbin = 0.01  # this is the small binning used to compute number counts and measure the SDHOD
