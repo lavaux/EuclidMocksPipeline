@@ -55,4 +55,4 @@ def createProjectDirectoryTree(project: str = "Repo") -> None:
             project_mkdir(*s)
 
     # TODO: This is extremely bad! Fix that copy to something sane
-    os.system(f"cp ../Repo/SelectionInputs/sel_input* ../{project}/Selections")
+    os.system(f"cp Repo/SelectionInputs/sel_input* {project}/Selections")

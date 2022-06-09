@@ -7,8 +7,8 @@ import sys
 from ..config import readConfig
 
 
-@register_tool
-def applyFootprintToMaster(config: str):
+#@register_tool
+def deprecated_applyFootprintToMaster(config: str):
     """Apply an indicated footprint in the configuration to a large master catalog.
 
     It applies a footprint to the master catalog, extracting another (smaller) master

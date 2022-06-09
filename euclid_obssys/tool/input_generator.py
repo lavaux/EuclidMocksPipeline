@@ -11,6 +11,7 @@ def generateConfig(
     type: str = "sdhod",
     selection: str = "MWext",
     footprintTag: str = None,
+    shuffle: bool = False,
 ) -> None:
     """This generate a configuration file for the Euclid Observational systematics pipeline.
 
@@ -22,6 +23,7 @@ def generateConfig(
         o (str): [description]. Output configuration file Defaults to None.
         footprintTag (str): footprint to use , e.g. "100sqdeg"
         selection (str): type of selection function to apply
+        shuffle (bool, default False): True if fluxes must be shuffled
         type (str, optional): Type of mock catalog to generate. Must be one of
             "sdhod", "flagship", "pinocchio", "box".
 
@@ -53,10 +55,10 @@ def generateConfig(
         "FOOTTAG": f'"{footprintTag}"' if not footprintTag is None else "None",
         "LFMODEL": repr(lf_model),
         "CATTYPE": type,
-        "SHUFFLE": "False",
+        "SHUFFLE": repr(shuffle),
         "SELDATA": f'"{selection}"' if selection != "None" else "None",
         "SELRAND": f'"{selection}"' if selection != "None" else "None",
-        "RSDFLAG": repr(rsd),
+        "RSDFLAG": repr(shuffle),
     }
 
     print(f"Repo directory is {repodir}")

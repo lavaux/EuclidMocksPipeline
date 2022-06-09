@@ -66,7 +66,7 @@ lf_model = "3"
 logflux_limit = np.log10(2.0e-16)  # This is the nominal flux limit
 smoothing_length = 5  # Gaussian smoothing for the SDHOD and for dn/dz
 cat_type = "CATTYPE"  # can be 'flagship', 'sdhod', 'pinocchio' or 'box'
-shuffled_fluxes = True
+shuffled_fluxes = SHUFFLE
 
 deltazbin = 0.01  # this is the small binning used to compute number counts and measure the SDHOD
 SEED_hod = (
@@ -83,9 +83,9 @@ random_realization_number = None
 
 
 # SELECTION SECTION
-selection_data_tag = None
-selection_random_tag = None
-apply_dataselection_to_random = False
+selection_data_tag = SELDATA
+selection_random_tag = SELRAND 
+apply_dataselection_to_random = True
 
 
 # MEASUREMENT SECTION
