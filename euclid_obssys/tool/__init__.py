@@ -1,11 +1,14 @@
 import inspect
 import traceback
 from functools import wraps
+import logging
 
 _toolbox = []
 _dask_started = False
 _debug = False
+_log = logging.getLogger("tools")
 
+_log.setLevel(logging.INFO)
 
 def register_tool(function):
     global _debug
@@ -31,7 +34,7 @@ def need_dask(function):
         from distributed import Client
         global _dask_started
         if not _dask_started:
-           print("# Starting dask")
+           _log.info("Starting dask")
            client = Client(n_workers=8)
            _dask_started = True
 

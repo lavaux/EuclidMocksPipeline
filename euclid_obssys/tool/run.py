@@ -41,6 +41,9 @@ class EuclidTool(object):
 
 def run_tool():
     import fire
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
 
     EuclidTool.__doc__ += "More tools available are:\n"
     for tool in get_tools():

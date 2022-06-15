@@ -77,6 +77,8 @@ BytesRead = BUFFERSIZE
 
 _log = logging.getLogger("pinocchio")
 
+_log.setLevel(logging.INFO)
+
 
 @contextlib.contextmanager
 def my_open(filename):
