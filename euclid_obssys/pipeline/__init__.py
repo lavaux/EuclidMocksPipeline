@@ -77,8 +77,10 @@ def refresh():
     global tool, tool_run
 
     tool.clear_tools()
+    old_dask = tool._dask_started
 
     tool = reload(tool)
+    tool._dask_started = old_dask
     print(_rreload(tool_run))
     _fillup_symbols()
 

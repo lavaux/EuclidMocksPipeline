@@ -70,7 +70,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
         print("\n# -- starting with catalog %d --" % myrun)
 
         pinfname = filenames.pinplc(input, myrun)
-        if not os.path.isfile(pinfname):
+        if not os.path.isfile(pinfname) and not os.path.isfile(pinfname + '.0'):
             print(f"ERROR, file {pinfname} not found, skipping this run")
             continue
         print("# Reading plc from file {}".format(pinfname))
