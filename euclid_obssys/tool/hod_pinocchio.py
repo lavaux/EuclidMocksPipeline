@@ -36,6 +36,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
     from colossus.cosmology import cosmology
     from scipy.stats import poisson
     from .. import pinocchio as rp
+    from .. import pinocchio_old as rp_old
     from ..disk import DefaultCatalogWrite
     import healpy as hp
     import sys
@@ -74,7 +75,12 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
             print(f"ERROR, file {pinfname} not found, skipping this run")
             continue
         print("# Reading plc from file {}".format(pinfname))
-        pincat = rp.plc(pinfname)
+        if input.get('pinocchio_version', 5) < 5:
+           print("#  Using old reader")
+           pincat = rp_old.plc(pinfname)
+        else:
+           print("#  Using new reader")
+           pincat = rp.plc(pinfname)
         print("Reading done")
 
         # filtering halos to reduce processing time

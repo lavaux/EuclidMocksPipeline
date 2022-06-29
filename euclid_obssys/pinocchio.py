@@ -636,6 +636,8 @@ class plc:
         self.theta = self.data["theta"]
         self.phi = self.data["phi"]
         self.obsz = self.data["obsz"]
+        # Compatibility field
+        self.redshift = self.truez
         if "pos" in self.data.dtype.fields:
             self.pos = self.data["pos"]
             self.vel = self.data["vel"]
