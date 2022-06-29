@@ -573,9 +573,9 @@ class plc:
             if Nfiles == 1:
                 myfname = filename
             else:
-                myfname = filename + ".{}".format(myfile)
+                myfname = f"{filename}.{myfile}"
 
-            _log.debug("reading file %s", myfname)
+            _log.info("reading file %s", myfname)
 
             with my_open(myfname) as f:
 
@@ -636,9 +636,10 @@ class plc:
         self.theta = self.data["theta"]
         self.phi = self.data["phi"]
         self.obsz = self.data["obsz"]
-        self.pos = self.data["pos"]
-        self.vel = self.data["vel"]
-        self.vlos = self.data["vlos"]
+        if "pos" in self.data.dtype.fields:
+            self.pos = self.data["pos"]
+            self.vel = self.data["vel"]
+            self.vlos = self.data["vlos"]
 
 
 class histories:
