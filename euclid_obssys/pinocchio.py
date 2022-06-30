@@ -477,6 +477,8 @@ class plc:
             print("sorry, I do not recognize this record length")
             return None
 
+        _log.info("Detected dtype for the catalog: %s", repr(self.cat_dtype))
+
         # decides what files to read
         if Nfiles > 1:
             if first_file is None:
