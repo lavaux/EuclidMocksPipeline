@@ -211,159 +211,233 @@ def my_fromfile(f, dtype, count, add_fortran_tags=False):
 
 class catalog:
     def __init__(self, filename):
+
+        # checks that the filename contains 'catalog'
+        if not 'catalog' in filename:
+            _log.error("Are you sure you are providing the right file name?")
+            return None
+
+        # checks that the input file ends by ".out"
+        last_ext=filename.rfind('.')
+        if filename[last_ext:]!='.out':
+
+            _log.error("The catalog file should end with .out, the file number extension will be checked by the code")
+            return None
+
+
         if not os.path.exists(filename):
-            _log.error("file not found: %s", filename)
-            sys.exit()
+            if not os.path.exists(f"{filename}.0"):
+                _log.error("file not found: %s", filename)
+                return None
+            else:
+                Nfiles = 1
+                while os.path.exists(f"{filename}.{Nfiles}"):
+                    Nfiles+=1
+                _log.info("The catalog is written in {} files".format(Nfiles))
+        else:
+            Nfiles = 1
 
         _log.debug("opening file %s", filename)
-        with open(filename, "rb") as f:
-            self._read_catalog(f)
+        if Nfiles == 1:
+            fname = filename
+        else:
+            fname = f"{filename}.0"
 
-    def _read_catalog(self, f):
+        with my_open(fname, mode="rb") as f:
+            reading = np.fromfile(f, dtype=np.int32, count=10)
 
+        NTasksPerFile = reading[1]
+        _log.debug('This file has been written by {} tasks', NTasksPerFile)
+        if reading[2]>10:
+            newRun=True
+            record_length=reading[2]
+            Nslices=1
+            _log.info('This is new output format, record length: {}', record_length)
+        else:
+            newRun=False
+            record_length=reading[7]
+            Nslices=reading[2]
+            _log.info('This is classic output format, record length: {}', record_length)
+            _log.debug('The box has been fragmented in {} slice{}', Nslices, '' if Nslices==1 else 's')
+        # sets the record
+        if record_length==96:
+
+            self.cat_dtype=[ ('name',  np.int64),
+                             ('Mass',  np.float64),
+                             ('posin', np.float64, 3),
+                             ('pos',   np.float64, 3),
+                             ('vel',   np.float64, 3),
+                             ('npart', np.int32),
+                             ('pad'  , np.int32) ]
+
+        elif record_length==56:
+
+            if newRun:
+
+                self.cat_dtype=[ ('name',  np.int64),
+                                 ('Mass',  np.float32),
+                                 ('pos',   np.float32, 3),
+                                 ('vel',   np.float32, 3),
+                                 ('posin', np.float32, 3),
+                                 ('npart', np.int32),
+                                 ('pad'  , np.int32) ]
+
+            else:
+
+                self.cat_dtype=[ ('name',  np.int64),
+                                 ('Mass',  np.float32),
+                                 ('posin', np.float32, 3),
+                                 ('pos',   np.float32, 3),
+                                 ('vel',   np.float32, 3),
+                                 ('npart', np.int32),
+                                 ('pad'  , np.int32) ]
+
+        elif record_length==48:
+
+            self.cat_dtype=[ ('name',  np.int64),
+                             ('Mass',  np.float32),
+                             ('pos',   np.float32, 3),
+                             ('vel',   np.float32, 3),
+                             ('posin', np.float32, 3) ]
+
+        else:
+            _log.error("sorry, I do not recognize this record length")
+            return None
+
+        # decides what files to read
+        if Nfiles>1:
+            if first_file is None:
+                first_file=0
+            elif first_file<0:
+                first_file=0
+            elif first_file>Nfiles:
+                first_file=Nfiles
+            if last_file is None:
+                last_file=Nfiles
+            else:
+                last_file += 1
+                if last_file<first_file:
+                    last_file=first_file+1
+                elif last_file>Nfiles:
+                    last_file=Nfiles
+            # this is to be used to define a pythonic range
+            if not silent:
+                print("I will read files in the python range from {} to {}".format(first_file,last_file))
+        else:
+            first_file=0
+            last_file=Nfiles
+
+        # counts the number of groups
+        # loop on files
         Ngroups = np.int64(0)
+        for myfile in range(first_file,last_file):
 
-        NTasksPerFile, NSlices = np.fromfile(f, dtype=np.int32, count=4)[1:3]
-
-        _log.debug("This file has been written by %s tasks", NTasksPerFile)
-        if NSlices > 10:
-            lite = True
-            record_length = NSlices
-            NSlices = 1
-            _log.debug("This is light output format, record length: %d", record_length)
-        else:
-            lite = False
-            record_length = -1
-            if NSlices == 1:
-                _log.debug("The box has been fragmented in 1 slice")
+            if Nfiles==1:
+                myfname = filename
             else:
-                _log.debug("The box has been fragmented in %d slices", NSlices)
+                myfname = "{filename}.{myfile}"
 
-        if lite:
+            _log.info("reading file {}",myfname)
 
-            # Count the number of halos
-            for iproc in range(NTasksPerFile):
-                ngood = np.fromfile(f, dtype=np.int32, count=3)[1]
-                # print ' +++ found %d halos...'%ngood
+            with my_open(myfname, mode="rb") as f:
+                Nthisfile=0
 
-                Ngroups += ngood
-                f.seek(ngood * (record_length + 8), 1)
+                # moves past the header
+                f.seek(16,1)
 
-            # Go back to the starting point (NTasksPerFile already read)
-            f.seek(16)
+                for myslice in range(Nslices):
 
-            print("Total number of halos: ", Ngroups)
-            print("+++++++++++++++++++")
+                    _log.debug("...slice {}", myslice)
 
-            self.name = np.empty(Ngroups, dtype=np.uint64)
-            self.Mass = np.empty(Ngroups, dtype=np.float32)
-            self.pos = np.empty((Ngroups, 3), dtype=np.float32)
-            self.vel = np.empty((Ngroups, 3), dtype=np.float32)
+                    WritingTasks=0
+                    for mytask in range(NTasksPerFile):
 
-            if record_length == 40:
-                record_dtype = np.dtype(
-                    [
-                        ("dum1", np.int32),
-                        ("name", np.uint64),
-                        ("Mass", np.float32),
-                        ("pos", np.float32, 3),
-                        ("vel", np.float32, 3),
-                        ("pad", np.int32),
-                        ("dum2", np.int32),
-                    ]
-                )
-            elif record_length == 36:
-                record_dtype = np.dtype(
-                    [
-                        ("dum1", np.int32),
-                        ("name", np.uint64),
-                        ("Mass", np.float32),
-                        ("pos", np.float32, 3),
-                        ("vel", np.float32, 3),
-                        ("dum2", np.int32),
-                    ]
-                )
+                        _log.debug("...task {}",mytask)
+
+                        ngood = np.fromfile(f,dtype=np.int32,count=3)[1]
+                        Ngroups+=ngood
+                        Nthisfile+=ngood
+                        if ngood>0:
+                            WritingTasks+=1
+
+                        _log.debug("found {} groups",ngood)
+                        if newRun:
+                            if ngood>0:
+                                f.seek(ngood*record_length+8,1)
+                        else:
+                            f.seek(ngood*(record_length+8),1)
+
+            if newRun:
+                file_length = 16 + NTasksPerFile*12 + WritingTasks*8 + Nthisfile*record_length
             else:
-                print("I do not recognise the record length!")
-                sys.exit(1)
+                file_length = 16 + Nslices*NTasksPerFile*12 + Nthisfile*(record_length+8)
+            if FileLength != file_length:
+                _log.error("Error: inconsistent length for the file {}, I expected {} and found {}",myfname,file_length,FileLength)
+                return None
+            elif VERBOSE:
+                _log.debug("File size of {} is as expected",myfname)
 
-            startid = 0
-            stopid = 0
-            for iproc in range(NTasksPerFile):
-                ngood = np.fromfile(f, dtype=np.int32, count=3)[1]
-                # print('Reading %d halos...'%ngood)
-                stopid += ngood
-                catalog = np.fromfile(f, dtype=record_dtype, count=ngood)
+        _log.info("Number of halos in the catalog: {}", Ngroups)
 
-                self.name[startid:stopid] = catalog["name"]
-                self.Mass[startid:stopid] = catalog["Mass"]
-                self.pos[startid:stopid] = catalog["pos"]
-                self.vel[startid:stopid] = catalog["vel"]
-                del catalog
-                startid = stopid
+        # allocates data
+        self.data = np.empty(Ngroups, dtype=self.cat_dtype)
 
-        else:
+        _log.debug("Reading the catalog")
 
-            # Count the number of halos
-            record_length = None
-            for islice in range(NSlices):
-                for iproc in range(NTasksPerFile):
-                    ngood = np.fromfile(f, dtype=np.int32, count=3)[1]
-                    # print(' +++ found %d halos...'%ngood)
-                    if record_length is None:
-                        record_length = np.fromfile(f, dtype=np.int32, count=1)[0]
-                        print("record_length: {}".format(record_length))
-                        f.seek(-4, 1)
-                    Ngroups += ngood
-                    f.seek(ngood * (record_length + 8), 1)
+        # counts the number of groups
+        # loop on files
+        counter=0
+        for myfile in range(first_file,last_file):
 
-            # Go back to the starting point (NTasksPerFile already read)
-            f.seek(16)
+            if Nfiles==1:
+                myfname = filename
+            else:
+                myfname = f"{filename}.{myfile}"
 
-            print("Total number of halos: ", Ngroups)
-            print("+++++++++++++++++++")
+            _log.info("reading file {}",myfname)
 
-            self.name = np.empty(Ngroups, dtype=np.uint64)
-            self.Mass = np.empty(Ngroups, dtype=np.float32)
-            self.posin = np.empty((Ngroups, 3), dtype=np.float32)
-            self.pos = np.empty((Ngroups, 3), dtype=np.float32)
-            self.vel = np.empty((Ngroups, 3), dtype=np.float32)
-            self.Npart = np.empty(Ngroups, dtype=np.int64)
+            with my_open(fname, mode="rb") as f:
 
-            record_dtype = np.dtype(
-                [
-                    ("dummy", np.int32),
-                    ("name", np.uint64),
-                    ("Mass", np.float32),
-                    ("posin", np.float32, 3),
-                    ("pos", np.float32, 3),
-                    ("vel", np.float32, 3),
-                    ("Npart", np.int32),
-                    ("pad", np.int32),
-                    ("dummy2", np.int32),
-                ]
-            )
+                # skips the header
+                skip = my_fromfile(f,np.int32,4)
 
-            startid = 0
-            stopid = 0
-            for islice in range(NSlices):
-                for iproc in range(NTasksPerFile):
-                    ngood = np.fromfile(f, dtype=np.int32, count=3)[1]
-                    # print('Reading %d halos...'%ngood)
-                    stopid += ngood
-                    catalog = np.fromfile(f, dtype=record_dtype, count=ngood)
+                for myslice in range(Nslices):
 
-                    self.name[startid:stopid] = catalog["name"]
-                    self.Mass[startid:stopid] = catalog["Mass"]
-                    self.posin[startid:stopid] = catalog["posin"]
-                    self.pos[startid:stopid] = catalog["pos"]
-                    self.vel[startid:stopid] = catalog["vel"]
-                    self.Npart[startid:stopid] = catalog["Npart"]
-                    del catalog
-                    startid = stopid
+                    _log.debug("...slice {}".format(myslice))
 
-        print("Reading catalog done")
-        f.close()
+                    for mytask in range(NTasksPerFile):
+                        _log.debug("...task {}".format(mytask))
+
+                        ngood = my_fromfile(f,np.int32,3)[1]
+
+                        if ngood>0:
+                            if newRun:
+                                # reads and checks the fortran tag
+                                size = my_fromfile(f,np.int32,1)[0]
+                                if size != ngood * np.dtype(self.cat_dtype).itemsize:
+                                    _log.error("ERROR: inconsistency in catalog file")
+                                    return None
+
+                            data = my_fromfile(f,self.cat_dtype,ngood,add_fortran_tags=not newRun)
+
+                            if newRun:
+                                # reads and checks the fortran tag
+                                size = my_fromfile(f,np.int32,1)[0]
+                                if size != ngood * np.dtype(self.cat_dtype).itemsize:
+                                    _log.error("ERROR: inconsistency in catalog file")
+                                    return None
+
+                            self.data['name'] [counter:counter+ngood] = data['name']
+                            self.data['Mass'] [counter:counter+ngood] = data['Mass']
+                            self.data['pos']  [counter:counter+ngood] = data['pos']
+                            self.data['vel']  [counter:counter+ngood] = data['vel']
+                            self.data['posin'][counter:counter+ngood] = data['posin']
+                            if record_length > 48:
+                                self.data[counter:counter+ngood]['npart'] = data['npart']
+
+                            counter+=ngood
+
+                _log.debug(f"done with file {}", myfname)
 
 
 class plc:
