@@ -79,6 +79,14 @@ _log = logging.getLogger("pinocchio")
 
 _log.setLevel(logging.INFO)
 
+# Some logging between DEBUG and INFO
+VERBOSE=15
+logging.addLevelName(VERBOSE, "VERBOSE")
+
+
+def log_verbose(*args):
+  _log.log(VERBOSE, *args)
+
 
 @contextlib.contextmanager
 def my_open(filename):
@@ -162,7 +170,7 @@ def my_fromfile(f, dtype, count, add_fortran_tags=False):
 
         # read what is present
         npresent = inBuffer // dtsize
-        _log.debug(
+        _log.warning(
             "the buffer is insufficient, reading %d fields of size %d", npresent, dtsize
         )
 
@@ -210,7 +218,7 @@ def my_fromfile(f, dtype, count, add_fortran_tags=False):
 
 
 class catalog:
-    def __init__(self, filename):
+    def __init__(self, filename,first_file=None,last_file=None):
 
         # checks that the filename contains 'catalog'
         if not 'catalog' in filename:
@@ -233,7 +241,7 @@ class catalog:
                 Nfiles = 1
                 while os.path.exists(f"{filename}.{Nfiles}"):
                     Nfiles+=1
-                _log.info("The catalog is written in {} files".format(Nfiles))
+                _log.info("The catalog is written in %d files",Nfiles)
         else:
             Nfiles = 1
 
@@ -243,22 +251,22 @@ class catalog:
         else:
             fname = f"{filename}.0"
 
-        with my_open(fname, mode="rb") as f:
+        with my_open(fname) as f:
             reading = np.fromfile(f, dtype=np.int32, count=10)
 
         NTasksPerFile = reading[1]
-        _log.debug('This file has been written by {} tasks', NTasksPerFile)
+        _log.debug('This file has been written by %d tasks', NTasksPerFile)
         if reading[2]>10:
             newRun=True
             record_length=reading[2]
             Nslices=1
-            _log.info('This is new output format, record length: {}', record_length)
+            _log.info('This is new output format, record length: %d', record_length)
         else:
             newRun=False
             record_length=reading[7]
             Nslices=reading[2]
-            _log.info('This is classic output format, record length: {}', record_length)
-            _log.debug('The box has been fragmented in {} slice{}', Nslices, '' if Nslices==1 else 's')
+            _log.info('This is classic output format, record length: %d', record_length)
+            _log.debug('The box has been fragmented in %d slice%s', Nslices, '' if Nslices==1 else 's')
         # sets the record
         if record_length==96:
 
@@ -321,8 +329,7 @@ class catalog:
                 elif last_file>Nfiles:
                     last_file=Nfiles
             # this is to be used to define a pythonic range
-            if not silent:
-                print("I will read files in the python range from {} to {}".format(first_file,last_file))
+            log_verbose("I will read files in the python range from %d to %d", first_file, last_file)
         else:
             first_file=0
             last_file=Nfiles
@@ -335,11 +342,11 @@ class catalog:
             if Nfiles==1:
                 myfname = filename
             else:
-                myfname = "{filename}.{myfile}"
+                myfname = f"{filename}.{myfile}"
 
-            _log.info("reading file {}",myfname)
+            _log.info("reading file %s",myfname)
 
-            with my_open(myfname, mode="rb") as f:
+            with my_open(myfname) as f:
                 Nthisfile=0
 
                 # moves past the header
@@ -347,12 +354,12 @@ class catalog:
 
                 for myslice in range(Nslices):
 
-                    _log.debug("...slice {}", myslice)
+                    _log.debug("...slice %d", myslice)
 
                     WritingTasks=0
                     for mytask in range(NTasksPerFile):
 
-                        _log.debug("...task {}",mytask)
+                        _log.debug("...task %d",mytask)
 
                         ngood = np.fromfile(f,dtype=np.int32,count=3)[1]
                         Ngroups+=ngood
@@ -360,7 +367,7 @@ class catalog:
                         if ngood>0:
                             WritingTasks+=1
 
-                        _log.debug("found {} groups",ngood)
+                        log_verbose("slice=%d, task=%d; found %d groups",myslice, mytask,ngood)
                         if newRun:
                             if ngood>0:
                                 f.seek(ngood*record_length+8,1)
@@ -372,17 +379,17 @@ class catalog:
             else:
                 file_length = 16 + Nslices*NTasksPerFile*12 + Nthisfile*(record_length+8)
             if FileLength != file_length:
-                _log.error("Error: inconsistent length for the file {}, I expected {} and found {}",myfname,file_length,FileLength)
+                _log.error("Error: inconsistent length for the file %s, I expected %d and found %d",myfname,file_length,FileLength)
                 return None
-            elif VERBOSE:
-                _log.debug("File size of {} is as expected",myfname)
+            else:
+                _log.debug("File size of %s is as expected",myfname)
 
-        _log.info("Number of halos in the catalog: {}", Ngroups)
+        _log.info("Number of halos in the catalog: %d", Ngroups)
 
         # allocates data
         self.data = np.empty(Ngroups, dtype=self.cat_dtype)
 
-        _log.debug("Reading the catalog")
+        log_verbose("Reading the catalog")
 
         # counts the number of groups
         # loop on files
@@ -394,19 +401,19 @@ class catalog:
             else:
                 myfname = f"{filename}.{myfile}"
 
-            _log.info("reading file {}",myfname)
+            _log.info("reading file %s",myfname)
 
-            with my_open(fname, mode="rb") as f:
+            with my_open(myfname) as f:
 
                 # skips the header
                 skip = my_fromfile(f,np.int32,4)
 
                 for myslice in range(Nslices):
 
-                    _log.debug("...slice {}".format(myslice))
+                    _log.debug("...slice %d", myslice)
 
                     for mytask in range(NTasksPerFile):
-                        _log.debug("...task {}".format(mytask))
+                        _log.debug("...task %d", mytask)
 
                         ngood = my_fromfile(f,np.int32,3)[1]
 
@@ -419,6 +426,7 @@ class catalog:
                                     return None
 
                             data = my_fromfile(f,self.cat_dtype,ngood,add_fortran_tags=not newRun)
+                            log_verbose("slice=%d, task=%d; read %d groups",myslice, mytask,ngood)
 
                             if newRun:
                                 # reads and checks the fortran tag
@@ -437,7 +445,7 @@ class catalog:
 
                             counter+=ngood
 
-                _log.debug(f"done with file {}", myfname)
+                log_verbose("done with file %s", myfname)
 
 
 class plc:
@@ -462,7 +470,7 @@ class plc:
 
             if not os.path.exists(filename + ".0"):
 
-                print("file {} or {} not found:".format(filename, filename + ".0"))
+                _log.error("file %s or %s not found:", filename, filename + ".0")
                 return None
 
             else:
