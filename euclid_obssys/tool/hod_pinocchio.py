@@ -4,6 +4,7 @@
 ################################################################################
 from . import register_tool, need_dask
 from ..config import readConfig
+from typing import Optional
 
 
 chunks_lfsat=1000000
@@ -16,10 +17,17 @@ def process_concentrations(Mdelta, z2, cmrelation, cosmo):
     cosmology.setCurrent(cosmo)
     return concentration.concentration(Mdelta, "200c", z=z2, model=cmrelation)
 
+def process_distance(z, table_z, table_dist):
+    from scipy.interpolate import interp1d
+    return interp1d(table_z, table_dist)(z)
+#    from colossus.cosmology import cosmology
+#    return cosmo.comovingDistance(z_max=z)
+    
+
 
 @register_tool
 @need_dask
-def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> None:
+def createHODFromPinocchio(config: str, starting_run: int, last_run: int, hack: bool = False, override_last_file: Optional[int] = None) -> None:
     """Create a HOD catalog from a set of Pinocchio runs.
 
     Args:
@@ -80,7 +88,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
            pincat = rp_old.plc(pinfname)
         else:
            print("#  Using new reader")
-           pincat = rp.plc(pinfname)
+           pincat = rp.plc(pinfname, last_file=override_last_file)
         print("Reading done")
 
         # filtering halos to reduce processing time
@@ -103,12 +111,25 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
         z = pincat.redshift[z_filter]
         obsz = pincat.obsz[z_filter]
         Mass = pincat.Mass[z_filter]
-        dist = np.sqrt(
+        if not hack:
+          dist = np.sqrt(
             pincat.pos[z_filter, 0] ** 2
             + pincat.pos[z_filter, 1] ** 2
             + pincat.pos[z_filter, 2] ** 2
-        )
-        vlos = pincat.vlos[z_filter]
+          )
+          vlos = pincat.vlos[z_filter]
+        else:
+          print("# WARNING: Reverse engineer the distance and vlos from redshift, use better PLC")
+          print("#   distance...")
+          table_z = np.linspace(0, 3.0, 10000)
+          table_distance = input.cosmo.comovingDistance(z_max=table_z)
+          with time.check_time("distance"):
+             dist = process_distance(z, table_z, table_distance)
+#            dist = da.map_blocks(
+#                   process_distance, da.array(z).rechunk(chunks=10000), table_z, table_distance, dtype=np.float).compute()
+          print("#   vlos...") 
+          with time.check_time("vlos"):
+            vlos = ne.evaluate("c * (z - obsz) / (1.0 + z)", global_dict={'c':input.SPEEDOFLIGHT})
         name = pincat.name[z_filter]
 
         del pincat
@@ -246,7 +267,7 @@ def createHODFromPinocchio(config: str, starting_run: int, last_run: int) -> Non
                     Mdelta_da,
                     zhost_da,
                     input.cmrelation,
-                    cosmology.getCurrent(),
+                    input.cosmo,
                     dtype=float,
                 )
 

@@ -69,8 +69,10 @@ def createFootprint(outdir: str = "Repo", tag: str = "100sqdeg", size: float = 1
 
     # plot of the location
     foot2 = reddening.copy()
-    foot2[footprint] *= 2
-    hp.mollview(foot2, max=1000)
+    maxval = foot2[footprint].max()
+    foot2[footprint] =1
+    foot2[footprint==False] = 0#foot2[footprint].min()
+    hp.mollview(foot2, max=1)
     plt.savefig(path.join(outdir, "Footprints", f"{tag}.png"))
 
     # writes footprint on fits file

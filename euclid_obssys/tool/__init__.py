@@ -37,6 +37,7 @@ def need_dask(function):
            _log.info("Starting dask")
            client = Client(n_workers=8)
            _dask_started = True
+           _log.info("DASK is available at %s", repr(client.dashboard_link))
 
         return function(*args, **kwargs)
 

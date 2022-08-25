@@ -58,10 +58,13 @@ def dN_dZ(config: str, myrun: Optional[int] = None) -> None:
     )
     bin_center = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
-    if (input.cat_type is "pinocchio") & (input.pinocchio_last_run is not None):
+    if (input.cat_type == "pinocchio") & (input.pinocchio_last_run is not None):
 
         Ngal = None
 
+        if myrun is not None:
+           input.pinocchio_first_run = myrun
+           input.pinocchio_last_run = myrun
         nruns = input.pinocchio_last_run - input.pinocchio_first_run + 1
         for myrun in np.arange(input.pinocchio_first_run, input.pinocchio_last_run + 1):
 

@@ -8,7 +8,7 @@ from euclid_obssys.config import readConfig
 
 @register_tool
 def extractGalaxyCatalogFromMaster(config: str):
-    """Extract a galaxy catalog from a master catalog based on pipeline config.
+    """Extract a galaxy catalog from a master catalog (e.g. Euclid-True Universe) based on pipeline config.
 
     extracts a galaxy
     catalog from a master catalog by applying the standard flux limit,
